@@ -1,0 +1,4 @@
+table_add update_int_label int_label_update => 4
+table_add ipv4_lpm ipv4_forward 10.0.2.22/32 => 00:00:00:00:00:01 2
+table_add ipv4_lpm ipv4_forward 10.0.1.11/32 => 00:00:00:00:00:01 1
+table_add ipv4_lpm ipv4_forward 10.0.3.32/32 => 00:00:00:00:00:01 3
