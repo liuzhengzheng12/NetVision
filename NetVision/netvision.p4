@@ -14,18 +14,50 @@ const bit<32> MAX_PORT_NUM = 1 << 10;
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
-typedef bit<9>  egressSpec_t;
-typedef bit<48> macAddr_t;
-typedef bit<32> ip4Addr_t;
-
 header ethernet_t {
-    macAddr_t dstAddr;
-    macAddr_t srcAddr;
-    bit<16>   etherType;
+    bit<48> dstAddr;
+    bit<48> srcAddr;
+    bit<16> etherType;
+}
+
+header ipv4_t {
+    bit<4>  version;
+    bit<4>  ihl;
+    bit<8>  diffserv;
+    bit<16> totalLen;
+    bit<16> identification;
+    bit<3>  flags;
+    bit<13> fragOffset;
+    bit<8>  ttl;
+    bit<8>  protocol;
+    bit<16> hdrChecksum;
+    bit<32> srcAddr;
+    bit<32> dstAddr;
+}
+
+header tcp_t {
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<32> seqNo;
+    bit<32> ackNo;
+    bit<4>  dataOffset;
+    bit<3>  res;
+    bit<3>  ecn;
+    bit<6>  ctrl;
+    bit<16> window;
+    bit<16> checksum;
+    bit<16> urgentPtr;
+}
+
+header udp_t {
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<16> len;
+    bit<16> checksum;
 }
 
 header sr_header_t {
-    bit<8> cnt;
+    bit<8> label_cnt;
 }
 
 header sr_label_t {
@@ -33,42 +65,36 @@ header sr_label_t {
 }
 
 header int_header_t {
-    bit<8> cnt;
+    bit<8> label_cnt;
 }
 
 header int_label_t {
-    bit<32> switch_id;
-
-    bit<16> ingress_port;
-    bit<16> egress_port;
-
-    bit<48> ingress_gtstamp;
-
-    bit<48> egress_gtstamp;
-
-    bit<32> ingress_tstamp;
-
-    bit<32> egress_tstamp;
-
-    bit<32> hop_latency;
-
-    bit<16> enq_qdepth;
-    bit<16> q_occupancy;
-}
-
-header ipv4_t {
-    bit<4>    version;
-    bit<4>    ihl;
-    bit<8>    diffserv;
-    bit<16>   totalLen;
-    bit<16>   identification;
-    bit<3>    flags;
-    bit<13>   fragOffset;
-    bit<8>    ttl;
-    bit<8>    protocol;
-    bit<16>   hdrChecksum;
-    ip4Addr_t srcAddr;
-    ip4Addr_t dstAddr;
+    bit<24> bitmap;             // metadata bitmap
+    // switch metadata
+    bit<16> switch_id;          // switch_id
+    bit<8> state;               // control_plane_state_version
+    // ingress metadata
+    bit<16> ingress_port;       // ingress_port_id
+    bit<32> ingress_tstamp;     // ingress_timestamp
+    bit<32> ingress_pkt_cnt;    // ingress_port_RX_pkt_count
+    bit<32> ingress_byte_cnt;   // ingress_port_RX_byte_count
+    bit<32> ingress_drop_cnt;   // ingress_port_RX_drop_count
+    bit<32> ingress_util;       // ingress_port_RX_utilization
+    // egress metadata
+    bit<16> egress_port;        // egress_port_id
+    bit<32> egress_tstamp;      // egress_timestamp
+    bit<32> egress_pkt_cnt;     // egress_port_TX_pkt_count
+    bit<32> egress_byte_cnt;    // egress_port_TX_byte_count
+    bit<32> egress_drop_cnt;    // egress_port_TX_drop_count
+    bit<32> egress_util;        // egress_port_TX_utilization
+    // buffer metadata
+    bit<32> enq_tstamp;         // enq_timestamp
+    bit<19> enq_qdepth;         // enq_qdepth
+    bit<32> hop_latency;        // deq_timedelta
+    bit<16> q_occupancy;        // deq_qdepth
+    // packet metadata
+    bit<32> pkt_len;            // packet_length
+    bit<32> inst_type;          // instance_type
 }
 
 struct metadata {
@@ -81,11 +107,13 @@ struct metadata {
 
 struct headers {
     ethernet_t                  ethernet;
+    ipv4_t                      ipv4;
+    tcp_t                       tcp;
+    udp_t                       udp;
     sr_header_t                 sr_header;
     sr_label_t[SR_MAX_LABELS]   sr_labels;
     int_header_t                int_header;
     int_label_t[INT_MAX_LABELS] int_labels;
-    ipv4_t                      ipv4;
 }
 
 /*************************************************************************
