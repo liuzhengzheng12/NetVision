@@ -240,7 +240,7 @@ control MyIngress(inout headers hdr,
 
     action ingress_drop_count() {
         ingressDropCounter.read(meta.ingress_drop_cnt, (bit<32>)standard_metadata.ingress_port);
-        meta.ingress_drop_cnt = meta.ingress_drop_cnt + standard_metadata.drop;
+        meta.ingress_drop_cnt = meta.ingress_drop_cnt + (bit<32>)standard_metadata.drop;
         ingressDropCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_drop_cnt);
     }
 
@@ -332,7 +332,7 @@ control MyEgress(inout headers hdr,
 
     action egress_drop_count() {
         egressDropCounter.read(meta.egress_drop_cnt, (bit<32>)standard_metadata.egress_port);
-        meta.egress_drop_cnt = meta.egress_drop_cnt + standard_metadata.drop;
+        meta.egress_drop_cnt = meta.egress_drop_cnt + (bit<32>)standard_metadata.drop;
         egressDropCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_drop_cnt);
     }
 
