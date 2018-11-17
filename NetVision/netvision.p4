@@ -228,7 +228,7 @@ control MyIngress(inout headers hdr,
     register<bit<32>>(MAX_PORT_NUM) ingressByteCounter;
     register<bit<32>>(MAX_PORT_NUM) ingressDropCounter;
 
-    action ingress_count() {
+    action ingress_traffic_count() {
         ingressPktCounter.read(meta.ingress_pkt_cnt, (bit<32>)standard_metadata.ingress_port);
         meta.ingress_pkt_cnt = meta.ingress_pkt_cnt + 1;
         ingressPktCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_pkt_cnt);
@@ -238,11 +238,13 @@ control MyIngress(inout headers hdr,
         ingressByteCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_byte_cnt);
     }
 
-    action drop() {
+    action ingress_drop_count() {
         ingressDropCounter.read(meta.ingress_drop_cnt, (bit<32>)standard_metadata.ingress_port);
-        meta.ingress_drop_cnt = meta.ingress_drop_cnt + 1;
+        meta.ingress_drop_cnt = meta.ingress_drop_cnt + standard_metadata.drop;
         ingressDropCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_drop_cnt);
+    }
 
+    action drop() {
         mark_to_drop();
     }
     
@@ -278,7 +280,8 @@ control MyIngress(inout headers hdr,
     }
 
     apply {
-        ingress_count();
+        ingress_traffic_count();
+
         if (meta.is_probe == 0) {
             if (hdr.ethernet.etherType == TYPE_IPv4) {
                 if (hdr.ipv4.ttl == 0) {
@@ -300,6 +303,8 @@ control MyIngress(inout headers hdr,
                 }
             }
         }
+
+        ingress_drop_cnt();
     }
 }
 
@@ -315,7 +320,7 @@ control MyEgress(inout headers hdr,
     register<bit<32>>(MAX_PORT_NUM) egressByteCounter;
     register<bit<32>>(MAX_PORT_NUM) egressDropCounter;
 
-    action egress_count() {
+    action egress_traffic_count() {
         egressPktCounter.read(meta.egress_pkt_cnt, (bit<32>)standard_metadata.egress_port);
         meta.egress_pkt_cnt = meta.egress_pkt_cnt + 1;
         egressPktCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_pkt_cnt);
@@ -325,12 +330,10 @@ control MyEgress(inout headers hdr,
         egressByteCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_byte_cnt);
     }
 
-    action drop() {
+    action egress_drop_count() {
         egressDropCounter.read(meta.egress_drop_cnt, (bit<32>)standard_metadata.egress_port);
-        meta.egress_drop_cnt = meta.egress_drop_cnt + 1;
+        meta.egress_drop_cnt = meta.egress_drop_cnt + standard_metadata.drop;
         egressDropCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_drop_cnt);
-        
-        mark_to_drop();
     }
 
     action push_tmy_label() {
@@ -380,11 +383,13 @@ control MyEgress(inout headers hdr,
     }
 
     apply {
-        egress_count();
+        egress_traffic_count();
 
         if (meta.is_probe == 1) {
             update_tmy_label.apply();
         }
+
+        egress_drop_cnt();
     }
 }
 
