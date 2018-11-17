@@ -304,7 +304,7 @@ control MyIngress(inout headers hdr,
             }
         }
 
-        ingress_drop_cnt();
+        ingress_drop_count();
     }
 }
 
@@ -389,7 +389,7 @@ control MyEgress(inout headers hdr,
             update_tmy_label.apply();
         }
 
-        egress_drop_cnt();
+        egress_drop_count();
     }
 }
 
