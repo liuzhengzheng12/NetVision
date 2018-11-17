@@ -188,7 +188,7 @@ parser MyParser(packet_in packet,
 
     state parse_tmy_header {
         packet.extract(hdr.tmy_header);
-        meta.probe = 1;
+        meta.is_probe = 1;
         meta.tmy_label_cnt = hdr.tmy_header.label_cnt;
         transition select(meta.tmy_label_cnt) {
             0      : accept;
@@ -258,7 +258,7 @@ control MyIngress(inout headers hdr,
     }
 
     action ipv4_forward(bit<48> dstAddr, bit<9> port) {
-        hdr.ethernet.fwdcAddr = hdr.ethernet.dstAddr;
+        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
         standard_metadata.egress_spec = port;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
@@ -382,7 +382,7 @@ control MyEgress(inout headers hdr,
     apply {
         egress_count();
 
-        if (meta.probe == 1) {
+        if (meta.is_probe == 1) {
             update_tmy_label.apply();
         }
     }
