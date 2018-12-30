@@ -205,12 +205,12 @@ struct metadata {
     bit<8>                              fwd_label_cnt;
     bit<8>                              tmy_inst_label_cnt;
     bit<8>                              tmy_data_label_cnt;
-    bit<32>                             ingress_pkt_cnt;
-    bit<32>                             ingress_byte_cnt;
-    bit<32>                             ingress_drop_cnt;
-    bit<32>                             egress_pkt_cnt;
-    bit<32>                             egress_byte_cnt;
-    bit<32>                             egress_drop_cnt;
+    bit<32>                             ingress_pkt_cnt_val;
+    bit<32>                             ingress_byte_cnt_val;
+    bit<32>                             ingress_drop_cnt_val;
+    bit<32>                             egress_pkt_cnt_val;
+    bit<32>                             egress_byte_cnt_val;
+    bit<32>                             egress_drop_cnt_val;
     tmy_inst_label_t                    tmy_inst_label;
     switch_id_t                         switch_id;
     bitmap_t                            bitmap;
@@ -379,19 +379,19 @@ control MyIngress(inout headers hdr,
     register<bit<32>>(MAX_PORT_NUM) ingressDropCounter;
 
     action ingress_traffic_count() {
-        ingressPktCounter.read(meta.ingress_pkt_cnt, (bit<32>)standard_metadata.ingress_port);
-        meta.ingress_pkt_cnt = meta.ingress_pkt_cnt + 1;
-        ingressPktCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_pkt_cnt);
+        ingressPktCounter.read(meta.ingress_pkt_cnt_val, (bit<32>)standard_metadata.ingress_port);
+        meta.ingress_pkt_cnt_val = meta.ingress_pkt_cnt_val + 1;
+        ingressPktCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_pkt_cnt_val);
 
-        ingressByteCounter.read(meta.ingress_byte_cnt, (bit<32>)standard_metadata.ingress_port);
-        meta.ingress_byte_cnt = meta.ingress_byte_cnt + standard_metadata.packet_length;
-        ingressByteCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_byte_cnt);
+        ingressByteCounter.read(meta.ingress_byte_cnt_val, (bit<32>)standard_metadata.ingress_port);
+        meta.ingress_byte_cnt_val = meta.ingress_byte_cnt_val + standard_metadata.packet_length;
+        ingressByteCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_byte_cnt_val);
     }
 
     action ingress_drop_count() {
-        ingressDropCounter.read(meta.ingress_drop_cnt, (bit<32>)standard_metadata.ingress_port);
-        meta.ingress_drop_cnt = meta.ingress_drop_cnt + (bit<32>)standard_metadata.drop;
-        ingressDropCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_drop_cnt);
+        ingressDropCounter.read(meta.ingress_drop_cnt_val, (bit<32>)standard_metadata.ingress_port);
+        meta.ingress_drop_cnt_val = meta.ingress_drop_cnt_val + (bit<32>)standard_metadata.drop;
+        ingressDropCounter.write((bit<32>)standard_metadata.ingress_port, meta.ingress_drop_cnt_val);
     }
 
     action drop() {
@@ -482,23 +482,23 @@ control MyEgress(inout headers hdr,
     register<bit<32>>(MAX_PORT_NUM) egressDropCounter;
 
     action egress_traffic_count() {
-        egressPktCounter.read(meta.egress_pkt_cnt, (bit<32>)standard_metadata.egress_port);
-        meta.egress_pkt_cnt = meta.egress_pkt_cnt + 1;
-        egressPktCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_pkt_cnt);
+        egressPktCounter.read(meta.egress_pkt_cnt_val, (bit<32>)standard_metadata.egress_port);
+        meta.egress_pkt_cnt_val = meta.egress_pkt_cnt_val + 1;
+        egressPktCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_pkt_cnt_val);
 
-        egressByteCounter.read(meta.egress_byte_cnt, (bit<32>)standard_metadata.egress_port);
-        meta.egress_byte_cnt = meta.egress_byte_cnt + standard_metadata.packet_length;
-        egressByteCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_byte_cnt);
+        egressByteCounter.read(meta.egress_byte_cnt_val, (bit<32>)standard_metadata.egress_port);
+        meta.egress_byte_cnt_val = meta.egress_byte_cnt_val + standard_metadata.packet_length;
+        egressByteCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_byte_cnt_val);
     }
 
     action egress_drop_count() {
-        egressDropCounter.read(meta.egress_drop_cnt, (bit<32>)standard_metadata.egress_port);
-        meta.egress_drop_cnt = meta.egress_drop_cnt + (bit<32>)standard_metadata.drop;
-        egressDropCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_drop_cnt);
+        egressDropCounter.read(meta.egress_drop_cnt_val, (bit<32>)standard_metadata.egress_port);
+        meta.egress_drop_cnt_val = meta.egress_drop_cnt_val + (bit<32>)standard_metadata.drop;
+        egressDropCounter.write((bit<32>)standard_metadata.egress_port, meta.egress_drop_cnt_val);
     }
 
     action pop_tmy_inst_label() {
-        meta.tmy_inst_label = hdr.tmy_inst_labels[0]
+        meta.tmy_inst_label = hdr.tmy_inst_labels[0];
         hdr.tmy_inst_labels.pop_front(1);
         hdr.tmy_inst_header.label_cnt = hdr.tmy_inst_header.label_cnt - 1;
     }
@@ -610,7 +610,7 @@ control MyEgress(inout headers hdr,
 
     action add_ingress_pkt_cnt_header() {
         meta.ingress_pkt_cnt.setValid();
-        meta.ingress_pkt_cnt.ingress_pkt_cnt = meta.ingress_pkt_cnt;
+        meta.ingress_pkt_cnt.ingress_pkt_cnt = meta.ingress_pkt_cnt_val;
         hdr.ingress_pkt_cnt = meta.ingress_pkt_cnt;
     }
 
@@ -628,7 +628,7 @@ control MyEgress(inout headers hdr,
 
     action add_ingress_byte_cnt_header() {
         meta.ingress_byte_cnt.setValid();
-        meta.ingress_byte_cnt.ingress_byte_cnt = meta.ingress_byte_cnt;
+        meta.ingress_byte_cnt.ingress_byte_cnt = meta.ingress_byte_cnt_val;
         hdr.ingress_byte_cnt = meta.ingress_byte_cnt;
     }
 
@@ -646,7 +646,7 @@ control MyEgress(inout headers hdr,
 
     action add_ingress_drop_cnt_header() {
         meta.ingress_drop_cnt.setValid();
-        meta.ingress_drop_cnt.ingress_drop_cnt = meta.ingress_drop_cnt;
+        meta.ingress_drop_cnt.ingress_drop_cnt = meta.ingress_drop_cnt_val;
         hdr.ingress_drop_cnt = meta.ingress_drop_cnt;
     }
 
@@ -700,7 +700,7 @@ control MyEgress(inout headers hdr,
 
     action add_egress_pkt_cnt_header() {
         meta.egress_pkt_cnt.setValid();
-        meta.egress_pkt_cnt.egress_pkt_cnt = meta.egress_pkt_cnt;
+        meta.egress_pkt_cnt.egress_pkt_cnt = meta.egress_pkt_cnt_val;
         hdr.egress_pkt_cnt = meta.egress_pkt_cnt;
     }
 
@@ -718,7 +718,7 @@ control MyEgress(inout headers hdr,
 
     action add_egress_byte_cnt_header() {
         meta.egress_byte_cnt.setValid();
-        meta.egress_byte_cnt.egress_byte_cnt = meta.egress_byte_cnt;
+        meta.egress_byte_cnt.egress_byte_cnt = meta.egress_byte_cnt_val;
         hdr.egress_byte_cnt = meta.egress_byte_cnt;
     }
 
@@ -736,7 +736,7 @@ control MyEgress(inout headers hdr,
 
     action add_egress_drop_cnt_header() {
         meta.egress_drop_cnt.setValid();
-        meta.egress_drop_cnt.egress_drop_cnt = meta.egress_drop_cnt;
+        meta.egress_drop_cnt.egress_drop_cnt = meta.egress_drop_cnt_val;
         hdr.egress_drop_cnt = meta.egress_drop_cnt;
     }
 
