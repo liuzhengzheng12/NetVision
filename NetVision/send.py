@@ -9,8 +9,8 @@ from scapy.all import *
 from scapy.fields import *
 import readline
 
-TYPE_SR = 0x1234;
-TYPE_INT = 0x5678;
+TYPE_SR = 0x1234
+TYPE_INT = 0x5678
 
 class SR_Header(Packet):
    fields_desc = [ BitField("cnt", 0, 8)]
@@ -43,7 +43,7 @@ def sendProbes():
     print "sending probes on interface %s to %s" % (iface, dstAddr)
 
     port_list = [4, 2, 4, 1, 1]
-    pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff', type=TYPE_SR);
+    pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff', type=TYPE_SR)
     pkt = pkt / SR_Header(cnt=len(port_list))
     for port in port_list:
         pkt = pkt / SR_Label(outport=port)

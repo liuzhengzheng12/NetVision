@@ -9,8 +9,8 @@ from scapy.all import *
 from scapy.fields import *
 import readline
 
-TYPE_SR = 0x1234;
-TYPE_INT = 0x5678;
+TYPE_SR = 0x1234
+TYPE_INT = 0x5678
 
 ETHER_LEN = 14 << 1
 INT_LEN = 1 << 1
