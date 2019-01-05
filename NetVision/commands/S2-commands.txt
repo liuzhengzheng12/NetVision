@@ -1,1 +1,1 @@
-table_add update_int_label int_label_update => 2
+table_add check_switch_id is_switch 10 => 
