@@ -50,7 +50,7 @@ def sendProbes():
     iface = "lo0"
     print "sending probes on interface %s to %s" % (iface, dstAddr)
 
-    port_list = [1]
+    port_list = [4, 2, 4, 1, 1]
     pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / TCP(dport=PORT_FWD)
     pkt /= FWD_Header(label_cnt=len(port_list))
     for port in port_list:
