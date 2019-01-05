@@ -408,14 +408,6 @@ control MyIngress(inout headers hdr,
         hdr.fwd_header.setInvalid();
     }
 
-    action fwd_complete_tcp() {
-        hdr.tcp.dstPort = PORT_TMY_DATA;
-    }
-
-    action fwd_complete_udp() {
-        hdr.udp.dstPort = PORT_TMY_DATA;
-    }
-
     action ipv4_forward(bit<9> port) {
         standard_metadata.egress_spec = port;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
@@ -455,12 +447,6 @@ control MyIngress(inout headers hdr,
                 fwd_nhop();
                 if (hdr.fwd_header.label_cnt == 0) {
                     fwd_header_invalid();
-                    if (hdr.tcp.isValid()) {
-                        fwd_complete_tcp();
-                    }
-                    if (hdr.udp.isValid()) {
-                        fwd_complete_udp();
-                    }
                 }
             }
         }
@@ -860,6 +846,18 @@ control MyEgress(inout headers hdr,
         default_action = NoAction();
     }
 
+    action tmy_inst_complete_tcp() {
+        hdr.tcp.dstPort = PORT_TMY_DATA;
+    }
+
+    action tmy_inst_complete_udp() {
+        hdr.udp.dstPort = PORT_TMY_DATA;
+    }
+
+    action tmy_inst_header_invalid() {
+        hdr.tmy_inst_header.setInvalid();
+    }
+
     apply {
         egress_traffic_count();
         egress_drop_count();
@@ -887,7 +885,13 @@ control MyEgress(inout headers hdr,
                 check_bit_pkt_len.apply();
                 check_bit_inst_type.apply();
                 if (hdr.tmy_inst_header.label_cnt == 0) {
-                    hdr.tmy_inst_header.setInvalid();
+                    tmy_inst_header_invalid();
+                    if (hdr.tcp.isValid()) {
+                        tmy_inst_complete_tcp();
+                    }
+                    if (hdr.udp.isValid()) {
+                        tmy_inst_complete_udp();
+                    }
                 }
             }
         }
