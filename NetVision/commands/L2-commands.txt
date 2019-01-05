@@ -1,4 +1,2 @@
 table_add check_switch_id is_switch 2 => 
-table_add ipv4_lpm ipv4_forward 10.0.2.22/32 => 2
-table_add ipv4_lpm ipv4_forward 10.0.1.11/32 => 4
-table_add ipv4_lpm ipv4_forward 10.0.3.32/32 => 4
+table_add check_bit_ingress_port add_ingress_port_header 1 =>

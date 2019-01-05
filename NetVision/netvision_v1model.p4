@@ -886,6 +886,9 @@ control MyEgress(inout headers hdr,
                 check_bit_deq_qdepth.apply();
                 check_bit_pkt_len.apply();
                 check_bit_inst_type.apply();
+                if (hdr.tmy_inst_header.label_cnt == 0) {
+                    hdr.tmy_inst_header.setInvalid();
+                }
             }
         }
 

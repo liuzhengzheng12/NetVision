@@ -1,1 +1,2 @@
 table_add check_switch_id is_switch 5 => 
+table_add check_bit_ingress_port add_ingress_port_header 1 =>
