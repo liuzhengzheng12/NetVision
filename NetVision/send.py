@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # from scapy.all import *
 from scapy.layers.l2 import Ether
-from scapy.layers.inet import IP, TCP
+from scapy.layers.inet import IP, UDP
 from scapy.fields import BitField
 from scapy.packet import Packet
 from scapy.arch import get_if_hwaddr
@@ -47,17 +47,17 @@ class TMY_INST_Label(Packet):
 
 def sendProbes():
     dstAddr = "10.0.2.22"
-    iface = "lo0"
+    iface = "H11-eth0"
     print "sending probes on interface %s to %s" % (iface, dstAddr)
 
     port_list = [4, 2, 4, 1, 1]
-    pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / TCP(dport=PORT_FWD)
+    pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / UDP(dport=PORT_FWD)
     pkt /= FWD_Header(label_cnt=len(port_list))
     for port in port_list:
         pkt /= FWD_Label(outport=port)
 
     pkt /= TMY_INST_Header(label_cnt=1)
-    pkt /= TMY_INST_Label(switch_id=1, bit_state=1)
+    pkt /= TMY_INST_Label(switch_id=7, bit_ingress_port=1)
     pkt.show()
     # sendpfast(pkt, pps=2, loop=200, file_cache=True, iface=iface)
     sendp(pkt, iface=iface)

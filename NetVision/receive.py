@@ -39,7 +39,7 @@ def extract_metadata(hexstr):
 
 def handle_pkt(pkt):
     # print "got the probe"
-    pkt.show()
+    # pkt.show()
     str = hexdump(pkt, dump=True)
     print str
     str_list = str.split('\n')
