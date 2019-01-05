@@ -56,7 +56,7 @@ def receiveProbes():
     iface = 'H11-eth0'
     # print "sniffing on %s" % iface
     # sys.stdout.flush()
-    sniff(filter="tcp dst port 0xfffe", iface=iface, prn=lambda x: handle_pkt(x))
+    sniff(filter="udp dst port 0xfffe", iface=iface, prn=lambda x: handle_pkt(x))
 
 
 if __name__ == '__main__':
