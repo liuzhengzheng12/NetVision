@@ -8,7 +8,11 @@ const bit<8>  TYPE_TCP  = 0x0006;
 const bit<8>  TYPE_UDP  = 0x0011;
 // tcp or udp .dstPort
 const bit<16> PORT_FWD  = 0xffff;
-const bit<16> PORT_TMY_DATA  = 0xfffe;
+const bit<16> PORT_TMY_INST  = 0xfffe;
+const bit<16> PORT_TMY_DATA  = 0xfffd;
+
+const bit<8> PROTO_TMY_INST = 0xff;
+const bit<8> PROTO_TMY_DATA  = 0xfe;
 
 const bit<32> MAX_PORT_NUM = 1 << 8;
 
@@ -63,6 +67,7 @@ header udp_t {
 
 header fwd_header_t {
     bit<8> label_cnt;
+    bit<8> proto;
 }
 
 header fwd_label_t {
@@ -201,7 +206,8 @@ header inst_type_t {
 
 struct metadata {
     bit<1>                              is_probe;    
-    bit<1>                              is_switch;        
+    bit<1>                              is_switch;   
+    bit<8>                              tmy_proto;     
     bit<8>                              fwd_label_cnt;
     bit<8>                              tmy_inst_label_cnt;
     bit<8>                              tmy_data_label_cnt;
@@ -300,7 +306,6 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.tcp);
         transition select(hdr.tcp.dstPort) {
             PORT_FWD: parse_fwd_header;
-            PORT_TMY_DATA: parse_tmy_data_header;
             default : accept;
         }
     }
@@ -309,7 +314,6 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.udp);
         transition select(hdr.udp.dstPort) {
             PORT_FWD: parse_fwd_header;
-            PORT_TMY_DATA: parse_tmy_data_header;
             default : accept;
         }
     }
@@ -318,6 +322,7 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.fwd_header);
         meta.is_probe = 1;
         meta.fwd_label_cnt = hdr.fwd_header.label_cnt;
+        meta.tmy_proto = hdr.fwd_header.proto;
         transition select(meta.fwd_label_cnt) {
             0      : parse_tmy_inst_header;
             default: parse_fwd_label;
@@ -327,8 +332,9 @@ parser MyParser(packet_in packet,
     state parse_fwd_label {
         packet.extract(hdr.fwd_labels.next);
         meta.fwd_label_cnt = meta.fwd_label_cnt - 1;
-        transition select(meta.fwd_label_cnt) {
-            0      : parse_tmy_inst_header;
+        transition select(meta.fwd_label_cnt, meta.tmy_proto) {
+            0 PROTO_TMY_INST : parse_tmy_inst_header;
+            0 PROTO_TMY_DATA : parse_tmy_data_header;
             default: parse_fwd_label;
         }
     }
