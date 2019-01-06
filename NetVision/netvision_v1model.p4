@@ -333,8 +333,8 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.fwd_labels.next);
         meta.fwd_label_cnt = meta.fwd_label_cnt - 1;
         transition select(meta.fwd_label_cnt, meta.tmy_proto) {
-            0 PROTO_TMY_INST : parse_tmy_inst_header;
-            0 PROTO_TMY_DATA : parse_tmy_data_header;
+            (0, PROTO_TMY_INST) : parse_tmy_inst_header;
+            (0, PROTO_TMY_DATA) : parse_tmy_data_header;
             default: parse_fwd_label;
         }
     }
