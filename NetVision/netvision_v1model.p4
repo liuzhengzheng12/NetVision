@@ -8,8 +8,7 @@ const bit<8>  TYPE_TCP  = 0x0006;
 const bit<8>  TYPE_UDP  = 0x0011;
 // tcp or udp .dstPort
 const bit<16> PORT_FWD  = 0xffff;
-const bit<16> PORT_TMY_INST  = 0xfffe;
-const bit<16> PORT_TMY_DATA  = 0xfffd;
+const bit<16> PORT_TMY_DATA  = 0xfffe;
 
 const bit<8> PROTO_TMY_INST = 0xff;
 const bit<8> PROTO_TMY_DATA  = 0xfe;
