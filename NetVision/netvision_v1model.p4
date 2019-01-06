@@ -300,6 +300,7 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.tcp);
         transition select(hdr.tcp.dstPort) {
             PORT_FWD: parse_fwd_header;
+            PORT_TMY_DATA: parse_tmy_data_header;
             default : accept;
         }
     }
@@ -308,6 +309,7 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.udp);
         transition select(hdr.udp.dstPort) {
             PORT_FWD: parse_fwd_header;
+            PORT_TMY_DATA: parse_tmy_data_header;
             default : accept;
         }
     }
@@ -862,7 +864,7 @@ control MyEgress(inout headers hdr,
         egress_traffic_count();
         egress_drop_count();
 
-        if (meta.is_probe == 1) {
+        if (hdr.tmy_inst_header.isValid()) {
             check_switch_id.apply();
             if (meta.is_switch == 1) {
                 add_switch_id_header();
