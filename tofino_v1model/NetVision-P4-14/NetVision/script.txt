@@ -1,0 +1,8 @@
+H22 python server.py &
+H11 python client.py &
+H11 python receive.py > result_h11.txt &
+H11 python send.py &
+
+
+H22 iperf -u -s &
+H32 iperf -u -c 10.0.2.22 -i 0.5 -b 110M -i 0.5 -t 20
