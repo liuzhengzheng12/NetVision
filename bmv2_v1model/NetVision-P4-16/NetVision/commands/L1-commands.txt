@@ -1,5 +1,5 @@
 table_add check_switch_id is_switch 1 => 
-table_add check_bit_state add_state_header 1 =>
+table_add check_bit_state add_state_header 1 => 1
 table_add check_bit_ingress_port add_ingress_port_header 1 =>
 table_add check_bit_ingress_tstamp add_ingress_tstamp_header 1 =>
 table_add check_bit_ingress_pkt_cnt add_ingress_pkt_cnt_header 1 =>
