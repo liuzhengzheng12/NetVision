@@ -62,7 +62,7 @@ def sendProbes():
         pkt /= FWD_Label(outport=port)
 
     pkt /= TMY_INST_Header(label_cnt=2)
-    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1)
+    pkt /= TMY_INST_Label(switch_id=6, bit_egress_port=1)
     pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1)
     pkt /= TMY_DATA_Header(label_cnt=0)
     pkt.show()
