@@ -1,3 +1,6 @@
+#include <tofino/intrinsic_metadata.p4>
+#include <tofino/stateful_alu_blackbox.p4>
+
 // ethernet.etherType
 #define TYPE_IPv4 0x0800
 // ipv4.protocol
@@ -109,8 +112,8 @@ header_type tmy_inst_label_t {
         bit_deq_qdepth: 1;
         bit_pkt_len: 1;
         bit_inst_type: 1;
-        bit_reserved: 7;
-        tos: 8;
+        bit_reserved: 6;
+        tos: 1;
     }
 }
 header tmy_inst_label_t tmy_inst_labels[TMY_MAX_LABELS];
@@ -323,7 +326,7 @@ header_type metadata_t {
         bit_pkt_len: 1;
         bit_inst_type: 1;
         bit_reserved: 7;
-        tos: 8;
+        tos: 1;
         tmy_data_label_cnt: 8;
         ingress_pkt_cnt_val: 32;
         ingress_byte_cnt_val: 32;
@@ -417,7 +420,6 @@ parser parse_fwd_label {
     extract(fwd_labels[next]);
     return select(latest.tos, meta.tmy_proto) {
         1, PROTO_TMY_INST : parse_tmy_inst_label;
-        1, PROTO_TMY_DATA : ingress;
         default: parse_fwd_label;
     }
 }
@@ -436,14 +438,50 @@ parser parse_tmy_inst_label {
 **************  I N G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
 
-register ingressPktCounter {
+register reg_ingress_pkt_cnt {
     width: 32;
     instance_count: MAX_PORT_NUM;
 }
 
-register ingressByteCounter {
+blackbox stateful_alu read_and_write_ingress_pkt_cnt {
+    reg : reg_ingress_pkt_cnt;
+    update_lo_1_value : register_lo + 1;
+    output_value : alu_lo;
+    output_dst : meta.ingress_pkt_cnt;
+}
+
+action read_and_write_ingress_pkt_cnt() {
+    read_and_write_ingress_pkt_cnt.execute_stateful_alu(ig_intr_md.ingress_port);
+}
+
+table read_and_write_ingress_pkt_cnt {
+    actions {
+        read_and_write_ingress_pkt_cnt;
+    }
+    default_action: read_and_write_ingress_pkt_cnt;
+}
+
+register reg_ingress_byte_cnt {
     width: 32;
     instance_count: MAX_PORT_NUM;
+}
+
+blackbox stateful_alu read_and_write_ingress_byte_cnt {
+    reg : reg_ingress_byte_cnt;
+    update_lo_1_value : register_lo + 1;
+    output_value : alu_lo;
+    output_dst : meta.ingress_pkt_cnt;
+}
+
+action read_and_write_ingress_byte_cnt() {
+    read_and_write_ingress_byte_cnt.execute_stateful_alu(ig_intr_md.ingress_port);
+}
+
+table read_and_write_ingress_byte_cnt {
+    actions {
+        read_and_write_ingress_byte_cnt;
+    }
+    default_action: read_and_write_ingress_byte_cnt;
 }
 
 register ingressDropCounter {
@@ -464,6 +502,7 @@ table mark_drop {
         mark_drop;
     }
 }
+
 
 action ingress_traffic_count() {
     register_read(meta.ingress_pkt_cnt_val, ingressPktCounter, standard_metadata.ingress_port);

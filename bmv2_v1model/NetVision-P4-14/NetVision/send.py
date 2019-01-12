@@ -12,16 +12,12 @@ PORT_TMY_DATA = 0xfffe
 
 
 class FWD_Header(Packet):
-    fields_desc = [BitField('label_cnt', 0, 8),
-                   BitField('proto', 0, 8)]
+    fields_desc = [BitField('proto', 0, 8)]
 
 
 class FWD_Label(Packet):
-    fields_desc = [BitField('outport', 0, 8)]
-
-
-class TMY_INST_Header(Packet):
-    fields_desc = [BitField('label_cnt', 0, 8)]
+    fields_desc = [BitField('outport', 0, 8),
+                   BitField('tos', 0, 8)]
 
 
 class TMY_INST_Label(Packet):
@@ -43,11 +39,8 @@ class TMY_INST_Label(Packet):
                    BitField('bit_deq_qdepth', 0, 1),
                    BitField('bit_pkt_len', 0, 1),
                    BitField('bit_inst_type', 0, 1),
-                   BitField('bit_reserved', 0, 7)]
-
-
-class TMY_DATA_Header(Packet):
-    fields_desc = [BitField('label_cnt', 0, 8)]
+                   BitField('bit_reserved', 0, 7),
+                   BitField('tos', 0, 8)]
 
 
 def sendProbes():
@@ -58,13 +51,11 @@ def sendProbes():
     port_list = [4, 2, 4, 1, 1]
     pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / UDP(dport=PORT_FWD)
     pkt /= FWD_Header(label_cnt=len(port_list), proto=0xff)
-    for port in port_list:
-        pkt /= FWD_Label(outport=port)
-
-    pkt /= TMY_INST_Header(label_cnt=2)
-    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1)
-    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1)
-    pkt /= TMY_DATA_Header(label_cnt=0)
+    for port in port_list[:-1]:
+        pkt /= FWD_Label(outport=port, tos=0)
+    pkt /= FWD_Label(outport=port_list[-1], tos=1)
+    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=0)
+    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=1)
     pkt.show()
     # sendpfast(pkt, pps=2, loop=200, file_cache=True, iface=iface)
     sendp(pkt, iface=iface)
