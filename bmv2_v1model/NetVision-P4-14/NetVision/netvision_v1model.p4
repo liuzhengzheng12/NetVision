@@ -550,6 +550,16 @@ table ipv4_lpm {
     size: 1024;
 }
 
+action test() {
+    modify_field(ethernet.dstAddr, 1);
+}
+
+table test {
+    actions {
+        test;
+    }
+}
+
 control ingress {
     apply(ingress_traffic_count);
 
@@ -579,6 +589,10 @@ control ingress {
         else {
             apply(mark_drop);
         }
+    }
+
+    if (valid(tmy_inst_labels[0])) {
+        apply(test);
     }
 
     apply(ingress_drop_count);
@@ -996,7 +1010,7 @@ table tmy_inst_complete {
 }
 
 control egress {
-
+    /*
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
@@ -1028,5 +1042,5 @@ control egress {
                 apply(tmy_inst_complete);
             }
         }
-    }
+    }*/
 }
