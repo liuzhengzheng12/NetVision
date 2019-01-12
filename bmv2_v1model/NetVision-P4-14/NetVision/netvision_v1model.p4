@@ -503,6 +503,7 @@ table fwd_nhop {
         fwd_nhop;
     }
 }
+
 action fwd_header_invalid() {
     remove_header(fwd_header);
 }
@@ -997,6 +998,7 @@ table tmy_inst_complete {
 }
 
 control egress {
+
     apply(egress_traffic_count);
     apply(egress_drop_count);
 

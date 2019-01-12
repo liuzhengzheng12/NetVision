@@ -16,3 +16,16 @@ table_add check_bit_deq_timedelta add_deq_timedelta_header 1 =>
 table_add check_bit_deq_qdepth add_deq_qdepth_header 1 =>
 table_add check_bit_pkt_len add_pkt_len_header 1 =>
 table_add check_bit_inst_type add_inst_type_header 1 =>
+table_set_default mark_drop mark_drop
+table_set_default ingress_traffic_count ingress_traffic_count
+table_set_default ingress_drop_count ingress_drop_count
+table_set_default fwd_nhop fwd_nhop
+table_set_default fwd_header_invalid fwd_header_invalid
+table_set_default fwd_complete_tcp fwd_complete_tcp
+table_set_default fwd_complete_udp fwd_complete_udp
+table_set_default ipv4_lpm pass
+table_set_default egress_traffic_count egress_traffic_count
+table_set_default egress_drop_count egress_drop_count
+table_set_default add_switch_id_header add_switch_id_header
+table_set_default add_bitmap_header add_bitmap_header
+table_set_default tmy_inst_complete tmy_inst_complete
