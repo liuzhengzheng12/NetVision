@@ -551,8 +551,7 @@ table ipv4_lpm {
 }
 
 control ingress {
-    apply(fwd_nhop);
-    /*apply(ingress_traffic_count);
+    apply(ingress_traffic_count);
 
     if (meta.is_probe == 0) {
         if (ethernet.etherType == TYPE_IPv4) {
@@ -565,11 +564,8 @@ control ingress {
         }
     }
     else {
-        if (valid(fwd_header)) {
-            apply(fwd_nhop);
-            if (valid(fwd_header)) {
-            }
-            else {
+        if (valid(fwd_labels[0])) {
+            if (fwd_labels[0].tos == 1) {
                 apply(fwd_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
@@ -578,6 +574,7 @@ control ingress {
                     apply(fwd_complete_udp);
                 }
             }
+            apply(fwd_nhop);
         }
         else {
             apply(mark_drop);
