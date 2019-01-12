@@ -455,7 +455,6 @@ action pass() {
 
 action mark_drop() {
     modify_field(meta.drop, 1);
-    drop();
 }
 
 table mark_drop {
@@ -546,7 +545,6 @@ table ipv4_lpm {
         pass;
     }
     size: 1024;
-    default_action: pass;
 }
 
 control ingress {
@@ -671,7 +669,6 @@ table check_switch_id {
         is_not_switch;
     }
     size: 1;
-    default_action: is_not_switch;
 }
 
 action add_switch_id_header() {
@@ -727,7 +724,6 @@ table check_bit_state {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_ingress_port_header() {
@@ -744,7 +740,6 @@ table check_bit_ingress_port {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_ingress_tstamp_header() {
@@ -761,7 +756,6 @@ table check_bit_ingress_tstamp {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_ingress_pkt_cnt_header() {
@@ -778,7 +772,6 @@ table check_bit_ingress_pkt_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_ingress_byte_cnt_header() {
@@ -795,7 +788,6 @@ table check_bit_ingress_byte_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_ingress_drop_cnt_header() {
@@ -812,7 +804,6 @@ table check_bit_ingress_drop_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_egress_port_header() {
@@ -829,7 +820,6 @@ table check_bit_egress_port {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_egress_tstamp_header() {
@@ -846,7 +836,6 @@ table check_bit_egress_tstamp {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_egress_pkt_cnt_header() {
@@ -863,7 +852,6 @@ table check_bit_egress_pkt_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_egress_byte_cnt_header() {
@@ -880,7 +868,6 @@ table check_bit_egress_byte_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_egress_drop_cnt_header() {
@@ -897,7 +884,6 @@ table check_bit_egress_drop_cnt {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_enq_tstamp_header() {
@@ -914,7 +900,6 @@ table check_bit_enq_tstamp {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_enq_qdepth_header() {
@@ -931,7 +916,6 @@ table check_bit_enq_qdepth {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_deq_timedelta_header() {
@@ -948,7 +932,6 @@ table check_bit_deq_timedelta {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_deq_qdepth_header() {
@@ -965,7 +948,6 @@ table check_bit_deq_qdepth {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_pkt_len_header() {
@@ -982,7 +964,6 @@ table check_bit_pkt_len {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action add_inst_type_header() {
@@ -999,7 +980,6 @@ table check_bit_inst_type {
         pass;
     }
     size: 1;
-    default_action: pass;
 }
 
 action tmy_inst_complete() {
