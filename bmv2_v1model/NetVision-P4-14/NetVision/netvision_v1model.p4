@@ -1012,7 +1012,6 @@ control egress {
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
-            apply(test);
             /*apply(add_switch_id_header);
             apply(add_bitmap_header);
             apply(check_bit_state);
@@ -1038,5 +1037,8 @@ control egress {
                 apply(tmy_inst_complete);
             }*/
         }
+    }
+    else {
+         apply(test);
     }
 }

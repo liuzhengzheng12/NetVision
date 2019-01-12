@@ -54,8 +54,8 @@ def sendProbes():
     for port in port_list[:-1]:
         pkt /= FWD_Label(outport=port, tos=0)
     pkt /= FWD_Label(outport=port_list[-1], tos=1)
-    pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=0)
     pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=1)
+    #pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=1)
     pkt.show()
     # sendpfast(pkt, pps=2, loop=200, file_cache=True, iface=iface)
     sendp(pkt, iface=iface)
