@@ -550,16 +550,6 @@ table ipv4_lpm {
     size: 1024;
 }
 
-action test() {
-    modify_field(ethernet.dstAddr, 1);
-}
-
-table test {
-    actions {
-        test;
-    }
-}
-
 control ingress {
     apply(ingress_traffic_count);
 
@@ -681,7 +671,6 @@ table check_switch_id {
         is_switch;
         is_not_switch;
     }
-    size: 1;
 }
 
 action add_switch_id_header() {
@@ -1005,6 +994,27 @@ table tmy_inst_complete {
     }
 }
 
+
+action test() {
+    modify_field(ethernet.dstAddr, 1);
+}
+
+table test {
+    actions {
+        test;
+    }
+}
+
+action test2() {
+    modify_field(ethernet.dstAddr, 2);
+}
+
+table test2 {
+    actions {
+        test2;
+    }
+}
+
 control egress {
     apply(egress_traffic_count);
     apply(egress_drop_count);
@@ -1012,9 +1022,10 @@ control egress {
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
-            /*apply(add_switch_id_header);
+            apply(test2);
+            apply(add_switch_id_header);
             apply(add_bitmap_header);
-            apply(check_bit_state);
+            /*apply(check_bit_state);
             apply(check_bit_ingress_port);
             apply(check_bit_ingress_tstamp);
             apply(check_bit_ingress_pkt_cnt);
@@ -1037,8 +1048,8 @@ control egress {
                 apply(tmy_inst_complete);
             }*/
         }
-    }
-    else {
-         apply(test);
+        else {
+             apply(test);
+        }
     }
 }
