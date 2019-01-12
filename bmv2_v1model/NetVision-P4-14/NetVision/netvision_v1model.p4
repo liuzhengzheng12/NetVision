@@ -591,10 +591,6 @@ control ingress {
         }
     }
 
-    if (valid(tmy_inst_labels[0])) {
-        apply(test);
-    }
-
     apply(ingress_drop_count);
 }
 
@@ -1010,14 +1006,14 @@ table tmy_inst_complete {
 }
 
 control egress {
-    /*
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
-            apply(add_switch_id_header);
+            apply(test);
+            /*apply(add_switch_id_header);
             apply(add_bitmap_header);
             apply(check_bit_state);
             apply(check_bit_ingress_port);
@@ -1040,7 +1036,7 @@ control egress {
             } 
             else {
                 apply(tmy_inst_complete);
-            }
+            }*/
         }
-    }*/
+    }
 }
