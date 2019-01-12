@@ -455,6 +455,7 @@ action pass() {
 
 action mark_drop() {
     modify_field(meta.drop, 1);
+    drop();
 }
 
 table mark_drop {
@@ -541,7 +542,7 @@ table ipv4_lpm {
     }
     actions {
         ipv4_forward;
-        drop;
+        mark_drop;
         pass;
     }
     size: 1024;
@@ -648,7 +649,7 @@ action pop_tmy_inst_label() {
     modify_field(meta.bit_deq_timedelta, tmy_inst_labels[0].bit_deq_timedelta);
     modify_field(meta.bit_deq_qdepth, tmy_inst_labels[0].bit_deq_qdepth);
     modify_field(meta.bit_pkt_len, tmy_inst_labels[0].bit_pkt_len);
-    modify_field(meta.bit_inst_type, tmy_inst_labels.bit_inst_type);
+    modify_field(meta.bit_inst_type, tmy_inst_labels[0].bit_inst_type);
     modify_field(meta.bit_reserved, tmy_inst_labels[0].bit_reserved);
     pop(tmy_inst_labels, 1);
 }
@@ -998,7 +999,7 @@ control egress {
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
-    if (valid(tmy_inst_labels)) {
+    if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
             apply(add_switch_id_header);
@@ -1020,7 +1021,7 @@ control egress {
             apply(check_bit_deq_qdepth);
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
-            if (valid(tmy_inst_labels)) {
+            if (valid(tmy_inst_labels[0])) {
             } 
             else {
                 apply(tmy_inst_complete);
