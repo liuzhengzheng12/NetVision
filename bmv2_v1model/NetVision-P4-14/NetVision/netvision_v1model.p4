@@ -647,13 +647,11 @@ action pop_tmy_inst_label() {
     modify_field(meta.bit_inst_type, tmy_inst_labels.bit_inst_type);
     modify_field(meta.bit_reserved, tmy_inst_labels[0].bit_reserved);
     pop(tmy_inst_labels, 1);
-    subtract_from_field(tmy_inst_header.label_cnt, 1);
 }
 
 action is_switch() {
     modify_field(meta.is_switch, 1);
     pop_tmy_inst_label();
-    add_to_field(tmy_data_header.label_cnt, 1);
 }
 
 action is_not_switch() {
@@ -900,7 +898,7 @@ table check_bit_egress_drop_cnt {
 
 action add_enq_tstamp_header() {
     add_header(enq_tstamp);
-    modify_field(enq_tstamp.enq_tstamp, standard_metadata.enq_timestamp);
+    modify_field(enq_tstamp.enq_tstamp, queueing_metadata.enq_timestamp);
 }
 
 table check_bit_enq_tstamp {
@@ -1010,16 +1008,6 @@ table tmy_inst_complete {
     }
 }
 
-action tmy_inst_header_invalid() {
-    remove_header(tmy_inst_header);
-}
-
-table tmy_inst_header_invalid {
-    actions {
-        tmy_inst_header_invalid;
-    }
-}
-
 control egress {
     apply(egress_traffic_count);
     apply(egress_drop_count);
@@ -1047,7 +1035,6 @@ control egress {
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
             if (!valid(tmy_inst_labels)) {
-                apply(tmy_inst_header_invalid);
                 apply(tmy_inst_complete);
             }
         }
