@@ -559,12 +559,12 @@ control ingress {
         }
     }
     else {
-        if not valid(fwd_header.label_cnt) {
+        if (!valid(fwd_header)) {
             apply(drop);
         }
         else {
             apply(fwd_nhop);
-            if not valid(fwd_header) {
+            if (!valid(fwd_header)) {
                 apply(fwd_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
