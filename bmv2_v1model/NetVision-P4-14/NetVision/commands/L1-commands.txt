@@ -30,5 +30,4 @@ table_set_default add_switch_id_header add_switch_id_header
 table_set_default add_bitmap_header add_bitmap_header
 table_set_default tmy_inst_complete tmy_inst_complete
 table_set_default check_switch_id is_not_switch
-table_set_default test test
 table_set_default test2 test2
