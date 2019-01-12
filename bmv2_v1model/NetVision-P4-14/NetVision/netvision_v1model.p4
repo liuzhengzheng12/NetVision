@@ -562,11 +562,6 @@ control ingress {
     }
     else {
         if (valid(fwd_header)) {
-        }
-        else {
-            apply(mark_drop);
-        }
-        else {
             apply(fwd_nhop);
             if (valid(fwd_header)) {
             }
@@ -579,6 +574,9 @@ control ingress {
                     apply(fwd_complete_udp);
                 }
             }
+        }
+        else {
+            apply(mark_drop);
         }
     }
 
