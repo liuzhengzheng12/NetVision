@@ -269,6 +269,7 @@ header_type inst_type_t {
         inst_type: 32;         // instance_type
     }
 }
+header inst_type_t inst_type;
 
 header_type metadata_t {
     fields {
@@ -722,7 +723,7 @@ table check_bit_ingress_port {
 
 action add_ingress_tstamp_header() {
     add_header(ingress_tstamp);
-    modify_field(ingress_tstamp.ingress_tstamp, standard_metadata.ingress_global_timestamp);
+    modify_field(ingress_tstamp.ingress_tstamp, intrinsic_metadata.ingress_global_timestamp);
 }
 
 table check_bit_ingress_tstamp {
@@ -807,7 +808,7 @@ table check_bit_egress_port {
 
 action add_egress_tstamp_header() {
     add_header(egress_tstamp);
-    modify_field(egress_tstamp.egress_tstamp, standard_metadata.egress_global_timestamp);
+    modify_field(egress_tstamp.egress_tstamp, intrinsic_metadata.egress_global_timestamp);
 }
 
 table check_bit_egress_tstamp {
@@ -892,7 +893,7 @@ table check_bit_enq_tstamp {
 
 action add_enq_qdepth_header() {
     add_header(enq_qdepth);
-    modify_field(enq_qdepth.enq_qdepth, standard_metadata.enq_qdepth);
+    modify_field(enq_qdepth.enq_qdepth, queueing_metadata.enq_qdepth);
 }
 
 table check_bit_enq_qdepth {
@@ -909,7 +910,7 @@ table check_bit_enq_qdepth {
 
 action add_deq_timedelta_header() {
     add_header(deq_timedelta);
-    modify_field(deq_timedelta.deq_timedelta, standard_metadata.deq_timedelta);
+    modify_field(deq_timedelta.deq_timedelta, queueing_metadata.deq_timedelta);
 }
 
 table check_bit_deq_timedelta {
@@ -926,7 +927,7 @@ table check_bit_deq_timedelta {
 
 action add_deq_qdepth_header() {
     add_header(deq_qdepth);
-    modify_field(deq_qdepth.deq_qdepth, standard_metadata.deq_qdepth);
+    modify_field(deq_qdepth.deq_qdepth, queueing_metadata.deq_qdepth);
 }
 
 table check_bit_deq_qdepth {
