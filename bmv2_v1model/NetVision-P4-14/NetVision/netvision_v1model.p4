@@ -82,7 +82,7 @@ header fwd_header_t fwd_header;
 
 header_type fwd_label_t {
     fields {
-        outport: 8;
+        outport: 7;
         tos: 1;
     }
 }
@@ -109,7 +109,7 @@ header_type tmy_inst_label_t {
         bit_deq_qdepth: 1;
         bit_pkt_len: 1;
         bit_inst_type: 1;
-        bit_reserved: 7;
+        bit_reserved: 6;
         tos: 1;
     }
 }
