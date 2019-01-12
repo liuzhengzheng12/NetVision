@@ -271,6 +271,30 @@ header_type inst_type_t {
 }
 header inst_type_t inst_type;
 
+header_type intrinsic_metadata_t {
+    fields {
+        ingress_global_timestamp : 48;
+        egress_global_timestamp : 48;
+        lf_field_list : 8;
+        mcast_grp : 16;
+        egress_rid : 16;
+        resubmit_flag : 8;
+        recirculate_flag : 8;
+    }
+}
+metadata intrinsic_metadata_t intrinsic_metadata;
+
+header_type queueing_metadata_t {
+    fields {
+        enq_timestamp : 48;
+        enq_qdepth : 16;
+        deq_timedelta : 32;
+        deq_qdepth : 16;
+        qid : 8;
+    }
+}
+metadata queueing_metadata_t queueing_metadata;
+
 header_type metadata_t {
     fields {
         is_probe: 1;    
@@ -333,7 +357,7 @@ field_list_calculation ipv4_checksum_calc {
     output_width: 16;
 }
 
-calculated_field ipv4.checksum {
+calculated_field ipv4.hdrChecksum {
     verify ipv4_checksum_calc if (valid(ipv4));
     update ipv4_checksum_calc if (valid(ipv4));
 }
@@ -535,12 +559,12 @@ control ingress {
         }
     }
     else {
-        if (fwd_header.label_cnt == 0) {
+        if not valid(fwd_header.label_cnt) {
             apply(drop);
         }
         else {
             apply(fwd_nhop);
-            if (fwd_header.label_cnt == 0) {
+            if not valid(fwd_header) {
                 apply(fwd_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
@@ -1000,7 +1024,7 @@ control egress {
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
-    if (valid(tmy_inst_header)) {
+    if (valid(tmy_inst_labels)) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
             apply(add_switch_id_header);
@@ -1022,7 +1046,7 @@ control egress {
             apply(check_bit_deq_qdepth);
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
-            if (tmy_inst_header.label_cnt == 0) {
+            if not valid(tmy_inst_labels) {
                 apply(tmy_inst_header_invalid);
                 apply(tmy_inst_complete);
             }
