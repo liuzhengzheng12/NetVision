@@ -1046,7 +1046,7 @@ control egress {
             apply(check_bit_deq_qdepth);
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
-            if not valid(tmy_inst_labels) {
+            if (!valid(tmy_inst_labels)) {
                 apply(tmy_inst_header_invalid);
                 apply(tmy_inst_complete);
             }
