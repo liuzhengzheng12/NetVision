@@ -417,6 +417,7 @@ parser parse_fwd_label {
 
 parser parse_tmy_proto {
     extract(tmy_proto);
+    set_metadata(meta.is_probe, 1);
     return select(tmy_proto.proto) {
         PROTO_TMY_INST: parse_tmy_inst_label;
         PROTO_TMY_DATA: ingress;
@@ -663,7 +664,7 @@ table assign_metadata {
 
 action is_switch() {
     modify_field(meta.is_switch, 1);
-    //pop_tmy_inst_label();
+    pop_tmy_inst_label();
 }
 
 action is_not_switch() {
@@ -1001,62 +1002,37 @@ table tmy_inst_complete {
     }
 }
 
-
-action test() {
-    modify_field(ethernet.dstAddr, 2);
-}
-
-table test {
-    actions {
-        test;
-    }
-}
-
-action test2() {
-    modify_field(ethernet.dstAddr, tmy_inst_labels[0].switch_id);
-}
-
-table test2 {
-    actions {
-        test2;
-    }
-}
-
 control egress {
+    
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
     if (valid(tmy_inst_labels[0])) {
-        apply(check_switch_id) {
-            hit {
-                apply(test);
-                /*apply(add_switch_id_header);
-                apply(add_bitmap_header);
-                apply(check_bit_state);
-                apply(check_bit_ingress_port);
-                apply(check_bit_ingress_tstamp);
-                apply(check_bit_ingress_pkt_cnt);
-                apply(check_bit_ingress_byte_cnt);
-                apply(check_bit_ingress_drop_cnt);
-                apply(check_bit_egress_port);
-                apply(check_bit_egress_tstamp);
-                apply(check_bit_egress_pkt_cnt);
-                apply(check_bit_egress_byte_cnt);
-                apply(check_bit_egress_drop_cnt);
-                apply(check_bit_enq_tstamp);
-                apply(check_bit_enq_qdepth);
-                apply(check_bit_deq_timedelta);
-                apply(check_bit_deq_qdepth);
-                apply(check_bit_pkt_len);
-                apply(check_bit_inst_type);
-                if (valid(tmy_inst_labels[0])) {
-                } 
-                else {
-                    apply(tmy_inst_complete);
-                }*/
-            }
-            miss {
-                apply(test2);
+        apply(check_switch_id);
+        if (meta.is_switch == 1) {
+            apply(add_switch_id_header);
+            apply(add_bitmap_header);
+            /*apply(check_bit_state);
+            apply(check_bit_ingress_port);
+            apply(check_bit_ingress_tstamp);
+            apply(check_bit_ingress_pkt_cnt);
+            apply(check_bit_ingress_byte_cnt);
+            apply(check_bit_ingress_drop_cnt);
+            apply(check_bit_egress_port);
+            apply(check_bit_egress_tstamp);
+            apply(check_bit_egress_pkt_cnt);
+            apply(check_bit_egress_byte_cnt);
+            apply(check_bit_egress_drop_cnt);
+            apply(check_bit_enq_tstamp);
+            apply(check_bit_enq_qdepth);
+            apply(check_bit_deq_timedelta);
+            apply(check_bit_deq_qdepth);
+            apply(check_bit_pkt_len);
+            apply(check_bit_inst_type);*/
+            if (valid(tmy_inst_labels[0])) {
+            } 
+            else {
+                apply(tmy_inst_complete);
             }
         }
     }
