@@ -561,12 +561,16 @@ control ingress {
         }
     }
     else {
-        if (!valid(fwd_header)) {
+        if (valid(fwd_header)) {
+        }
+        else {
             apply(mark_drop);
         }
         else {
             apply(fwd_nhop);
-            if (!valid(fwd_header)) {
+            if (valid(fwd_header)) {
+            }
+            else {
                 apply(fwd_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
@@ -1018,7 +1022,9 @@ control egress {
             apply(check_bit_deq_qdepth);
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
-            if (!valid(tmy_inst_labels)) {
+            if (valid(tmy_inst_labels)) {
+            } 
+            else {
                 apply(tmy_inst_complete);
             }
         }
