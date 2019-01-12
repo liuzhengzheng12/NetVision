@@ -82,8 +82,8 @@ header fwd_header_t fwd_header;
 
 header_type fwd_label_t {
     fields {
-        outport: 7;
-        tos: 1;
+        outport: 8;
+        tos: 8;
     }
 }
 header fwd_label_t fwd_labels[FWD_MAX_LABELS];
@@ -551,7 +551,8 @@ table ipv4_lpm {
 }
 
 control ingress {
-    apply(ingress_traffic_count);
+    apply(fwd_nhop);
+    /*apply(ingress_traffic_count);
 
     if (meta.is_probe == 0) {
         if (ethernet.etherType == TYPE_IPv4) {
@@ -583,7 +584,7 @@ control ingress {
         }
     }
 
-    apply(ingress_drop_count);
+    apply(ingress_drop_count);*/
 }
 
 /*************************************************************************
@@ -998,7 +999,7 @@ table tmy_inst_complete {
 }
 
 control egress {
-
+    /*
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
@@ -1030,5 +1031,5 @@ control egress {
                 apply(tmy_inst_complete);
             }
         }
-    }
+    }*/
 }
