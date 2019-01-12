@@ -415,10 +415,10 @@ parser parse_fwd_header {
 
 parser parse_fwd_label {
     extract(fwd_labels[next]);
-    return select(latest.tos, meta.tmy_proto) {
-        1, PROTO_TMY_INST : parse_tmy_inst_label;
-        1, PROTO_TMY_DATA : ingress;
-        default: parse_fwd_label;
+    return select(latest.tos) {
+        0 : parse_fwd_label;
+        1 : parse_tmy_inst_label;
+        default : ingress;
     }
 }
 
@@ -654,9 +654,15 @@ action pop_tmy_inst_label() {
     pop(tmy_inst_labels, 1);
 }
 
+table assign_metadata {
+    actions {
+        assign_metadata;
+    }
+}
+
 action is_switch() {
     modify_field(meta.is_switch, 1);
-    pop_tmy_inst_label();
+    //pop_tmy_inst_label();
 }
 
 action is_not_switch() {
@@ -996,7 +1002,7 @@ table tmy_inst_complete {
 
 
 action test() {
-    modify_field(ethernet.dstAddr, 1);
+    modify_field(ethernet.dstAddr, 2);
 }
 
 table test {
@@ -1006,7 +1012,7 @@ table test {
 }
 
 action test2() {
-    modify_field(ethernet.dstAddr, 2);
+    modify_field(ethernet.dstAddr, tmy_inst_labels[0].switch_id);
 }
 
 table test2 {
@@ -1020,36 +1026,37 @@ control egress {
     apply(egress_drop_count);
 
     if (valid(tmy_inst_labels[0])) {
-        apply(check_switch_id);
-        if (meta.is_switch == 1) {
-            apply(test2);
-            apply(add_switch_id_header);
-            apply(add_bitmap_header);
-            /*apply(check_bit_state);
-            apply(check_bit_ingress_port);
-            apply(check_bit_ingress_tstamp);
-            apply(check_bit_ingress_pkt_cnt);
-            apply(check_bit_ingress_byte_cnt);
-            apply(check_bit_ingress_drop_cnt);
-            apply(check_bit_egress_port);
-            apply(check_bit_egress_tstamp);
-            apply(check_bit_egress_pkt_cnt);
-            apply(check_bit_egress_byte_cnt);
-            apply(check_bit_egress_drop_cnt);
-            apply(check_bit_enq_tstamp);
-            apply(check_bit_enq_qdepth);
-            apply(check_bit_deq_timedelta);
-            apply(check_bit_deq_qdepth);
-            apply(check_bit_pkt_len);
-            apply(check_bit_inst_type);
-            if (valid(tmy_inst_labels[0])) {
-            } 
-            else {
-                apply(tmy_inst_complete);
-            }*/
-        }
-        else {
-             apply(test);
+        apply(check_switch_id) {
+            hit {
+                apply(test);
+                /*apply(add_switch_id_header);
+                apply(add_bitmap_header);
+                apply(check_bit_state);
+                apply(check_bit_ingress_port);
+                apply(check_bit_ingress_tstamp);
+                apply(check_bit_ingress_pkt_cnt);
+                apply(check_bit_ingress_byte_cnt);
+                apply(check_bit_ingress_drop_cnt);
+                apply(check_bit_egress_port);
+                apply(check_bit_egress_tstamp);
+                apply(check_bit_egress_pkt_cnt);
+                apply(check_bit_egress_byte_cnt);
+                apply(check_bit_egress_drop_cnt);
+                apply(check_bit_enq_tstamp);
+                apply(check_bit_enq_qdepth);
+                apply(check_bit_deq_timedelta);
+                apply(check_bit_deq_qdepth);
+                apply(check_bit_pkt_len);
+                apply(check_bit_inst_type);
+                if (valid(tmy_inst_labels[0])) {
+                } 
+                else {
+                    apply(tmy_inst_complete);
+                }*/
+            }
+            miss {
+                apply(test2);
+            }
         }
     }
 }
