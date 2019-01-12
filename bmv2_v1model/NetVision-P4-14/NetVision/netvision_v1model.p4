@@ -422,7 +422,7 @@ parser parse_fwd_label {
 }
 
 parser parse_tmy_proto {
-    exact(tmy_proto);
+    extract(tmy_proto);
     return select(tmy_proto.proto) {
         PROTO_TMY_INST: parse_tmy_inst_label;
         PROTO_TMY_DATA: ingress;
