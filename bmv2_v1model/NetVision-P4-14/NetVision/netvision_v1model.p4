@@ -581,7 +581,7 @@ control ingress {
         }
     }
 
-    apply(ingress_drop_count);*/
+    apply(ingress_drop_count);
 }
 
 /*************************************************************************
@@ -996,7 +996,7 @@ table tmy_inst_complete {
 }
 
 control egress {
-    /*
+
     apply(egress_traffic_count);
     apply(egress_drop_count);
 
@@ -1028,5 +1028,5 @@ control egress {
                 apply(tmy_inst_complete);
             }
         }
-    }*/
+    }
 }
