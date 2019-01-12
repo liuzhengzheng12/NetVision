@@ -297,7 +297,7 @@ metadata queueing_metadata_t queueing_metadata;
 
 header_type metadata_t {
     fields {
-        drop;
+        drop: 1;
         is_probe: 1;    
         is_switch: 1;   
         tmy_proto: 8;     
@@ -417,7 +417,6 @@ parser parse_fwd_label {
     extract(fwd_labels[next]);
     return select(latest.tos, meta.tmy_proto) {
         1, PROTO_TMY_INST : parse_tmy_inst_label;
-        1, PROTO_TMY_DATA : parse_tmy_data_label;
         default: parse_fwd_label;
     }
 }
@@ -714,9 +713,9 @@ table add_bitmap_header {
     }
 }
 
-action add_state_header(state) {
+action add_state_header(state_val) {
     add_header(state);
-    modify_field(state.state, state);
+    modify_field(state.state, state_val);
 }
 
 table check_bit_state {
