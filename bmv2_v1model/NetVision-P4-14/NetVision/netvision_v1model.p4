@@ -393,7 +393,7 @@ parser parse_ipv4 {
 parser parse_tcp {
     extract(tcp);
     return select(tcp.dstPort) {
-        PORT_FWD: parse_fwd_header;
+        PORT_FWD: parse_fwd_label;
         default : ingress;
     }
 }
@@ -401,15 +401,9 @@ parser parse_tcp {
 parser parse_udp {
     extract(udp);
     return select(udp.dstPort) {
-        PORT_FWD: parse_fwd_header;
+        PORT_FWD: parse_fwd_label;
         default : ingress;
     }
-}
-
-parser parse_fwd_header {
-    extract(fwd_header);
-    set_metadata(meta.is_probe, 1);
-    return parse_fwd_label;
 }
 
 parser parse_fwd_label {
@@ -511,13 +505,13 @@ table fwd_nhop {
     }
 }
 
-action fwd_header_invalid() {
-    remove_header(fwd_header);
+action tmy_proto_header_invalid() {
+    remove_header(tmy_proto);
 }
 
-table fwd_header_invalid {
+table tmy_proto_header_invalid {
     actions {
-        fwd_header_invalid;
+        tmy_proto_header_invalid;
     }
 }
 action fwd_complete_tcp() {
@@ -573,7 +567,7 @@ control ingress {
     else {
         if (valid(fwd_labels[0])) {
             if (fwd_labels[0].tos == 1) {
-                apply(fwd_header_invalid);
+                apply(tmy_proto_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
                 }
