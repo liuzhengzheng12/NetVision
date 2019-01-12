@@ -50,7 +50,7 @@ def sendProbes():
 
     port_list = [4, 2, 4, 1, 1]
     pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / UDP(dport=PORT_FWD)
-    pkt /= FWD_Header(label_cnt=len(port_list), proto=0xff)
+    pkt /= FWD_Header(proto=0xff)
     for port in port_list[:-1]:
         pkt /= FWD_Label(outport=port, tos=0)
     pkt /= FWD_Label(outport=port_list[-1], tos=1)
