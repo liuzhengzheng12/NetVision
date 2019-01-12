@@ -43,6 +43,10 @@ class TMY_INST_Label(Packet):
                    BitField('tos', 0, 8)]
 
 
+class TMY_DATA_Header(Packet):
+    fields_desc = [BitField('label_cnt', 0, 8)]
+
+
 def sendProbes():
     dstAddr = "10.0.2.22"
     iface = "H11-eth0"
@@ -54,7 +58,8 @@ def sendProbes():
         pkt /= FWD_Label(outport=port, tos=0)
     pkt /= FWD_Label(outport=port_list[-1], tos=1)
     pkt /= TMY_Proto_Header(proto=0xff)
-    pkt /= TMY_INST_Label(switch_id=1, bit_ingress_port=1, tos=1)
+    pkt /= TMY_INST_Label(switch_id=6, bit_egress_port=1, tos=1)
+    pkt /= TMY_DATA_Header(label_cnt=0)
     # pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=1)
     pkt.show()
     # sendpfast(pkt, pps=2, loop=200, file_cache=True, iface=iface)

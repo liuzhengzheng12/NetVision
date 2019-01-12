@@ -115,6 +115,13 @@ header_type tmy_inst_label_t {
 }
 header tmy_inst_label_t tmy_inst_labels[TMY_MAX_LABELS];
 
+header_type tmy_data_header_t {
+    fields {
+        label_cnt: 8;
+    }
+}
+header tmy_data_header_t tmy_data_header;
+
 header_type switch_id_t {
     fields {
         switch_id: 16;          // switch_id
@@ -428,9 +435,112 @@ parser parse_tmy_proto {
 parser parse_tmy_inst_label {
     extract(tmy_inst_labels[next]);
     return select(latest.tos) {
-        0      : parse_tmy_inst_label;
+        0 : parse_tmy_inst_label;
+        1 : parse_tmy_data_header;
+    }
+}
+
+parser parse_tmy_data_header {
+    extract(tmy_data_header);
+    return select(tmy_data_header.label_cnt) {
+        -1 : parse_switch_id;
         default: ingress;
     }
+}
+
+parser parse_switch_id {
+    extract(switch_id);
+    return parse_bitmap;
+}
+
+parser parse_bitmap {
+    extract(bitmap);
+    return parse_state;
+}
+
+parser parse_state {
+    extract(state);
+    return parse_ingress_port;
+}
+
+parser parse_ingress_port {
+    extract(ingress_port);
+    return parse_ingress_tstamp;
+}
+
+parser parse_ingress_tstamp {
+    extract(ingress_tstamp);
+    return parse_ingress_pkt_cnt;
+}
+
+parser parse_ingress_pkt_cnt {
+    extract(ingress_pkt_cnt);
+    return parse_ingress_byte_cnt;
+}
+
+parser parse_ingress_byte_cnt {
+    extract(ingress_byte_cnt);
+    return parse_ingress_drop_cnt;
+}
+
+parser parse_ingress_drop_cnt {
+    extract(ingress_drop_cnt);
+    return parse_egress_port;
+}
+
+parser parse_egress_port {
+    extract(egress_port);
+    return parse_egress_tstamp;
+}
+
+parser parse_egress_tstamp {
+    extract(egress_tstamp);
+    return parse_egress_pkt_cnt;
+}
+
+parser parse_egress_pkt_cnt {
+    extract(egress_pkt_cnt);
+    return parse_egress_byte_cnt;
+}
+
+parser parse_egress_byte_cnt {
+    extract(egress_byte_cnt);
+    return parse_egress_drop_cnt;
+}
+
+parser parse_egress_drop_cnt {
+    extract(egress_drop_cnt);
+    return parse_enq_tstamp;
+}
+
+parser parse_enq_tstamp {
+    extract(enq_tstamp);
+    return parse_enq_qdepth;
+}
+
+parser parse_enq_qdepth {
+    extract(enq_qdepth);
+    return parse_deq_timedelta;
+}
+
+parser parse_deq_timedelta {
+    extract(deq_timedelta);
+    return parse_deq_qdepth;
+}
+
+parser parse_deq_qdepth {
+    extract(deq_qdepth);
+    return parse_pkt_len;
+}
+
+parser parse_pkt_len {
+    extract(pkt_len);
+    return parse_inst_type;
+}
+
+parser parse_inst_type {
+    extract(inst_type);
+    return ingress;
 }
 
 
@@ -656,15 +766,10 @@ action pop_tmy_inst_label() {
     pop(tmy_inst_labels, 1);
 }
 
-table assign_metadata {
-    actions {
-        assign_metadata;
-    }
-}
-
 action is_switch() {
     modify_field(meta.is_switch, 1);
     pop_tmy_inst_label();
+    add_to_field(tmy_data_header.label_cnt, 1);
 }
 
 action is_not_switch() {
@@ -1006,13 +1111,12 @@ control egress {
     
     apply(egress_traffic_count);
     apply(egress_drop_count);
-
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
             apply(add_switch_id_header);
             apply(add_bitmap_header);
-            /*apply(check_bit_state);
+            apply(check_bit_state);
             apply(check_bit_ingress_port);
             apply(check_bit_ingress_tstamp);
             apply(check_bit_ingress_pkt_cnt);
@@ -1028,7 +1132,7 @@ control egress {
             apply(check_bit_deq_timedelta);
             apply(check_bit_deq_qdepth);
             apply(check_bit_pkt_len);
-            apply(check_bit_inst_type);*/
+            apply(check_bit_inst_type);
             if (valid(tmy_inst_labels[0])) {
             } 
             else {
