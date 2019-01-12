@@ -32,7 +32,7 @@ stop:
 build: dirs $(compiled_json)
 
 $(BUILD_DIR)/%.json: %.p4
-	$(P4C) --std p4-16 --target bmv2 --arch v1model $(P4C_ARGS) -o $(BUILD_DIR) $<
+	$(P4C) --std p4-14 --target bmv2 --arch v1model $(P4C_ARGS) -o $(BUILD_DIR) $<
 
 dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
