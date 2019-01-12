@@ -311,17 +311,17 @@ metadata metadata_t meta;
 
 
 field_list ipv4_checksum_fields {
-    ipv4.version,
-    ipv4.ihl,
-    ipv4.diffserv,
-    ipv4.totalLen,
-    ipv4.identification,
-    ipv4.flags,
-    ipv4.fragOffset,
-    ipv4.ttl,
-    ipv4.protocol,
-    ipv4.srcAddr,
-    ipv4.dstAddr 
+    ipv4.version;
+    ipv4.ihl;
+    ipv4.diffserv;
+    ipv4.totalLen;
+    ipv4.identification;
+    ipv4.flags;
+    ipv4.fragOffset;
+    ipv4.ttl;
+    ipv4.protocol;
+    ipv4.srcAddr;
+    ipv4.dstAddr;
 }
 
 field_list_calculation ipv4_checksum_calc {
@@ -343,7 +343,7 @@ calculated_field ipv4.checksum {
 
     
 parser start {
-    setmetadata(meta.is_probe, 0);
+    set_metadata(meta.is_probe, 0);
     return parse_ethernet;
 }
 
@@ -390,8 +390,8 @@ parser parse_fwd_header {
 parser parse_fwd_label {
     extract(fwd_labels[next]);
     return select(latest.tos, meta.tmy_proto) {
-        (1, PROTO_TMY_INST) : parse_tmy_inst_label;
-        (1, PROTO_TMY_DATA) : parse_tmy_data_label;
+        1, PROTO_TMY_INST : parse_tmy_inst_label;
+        1, PROTO_TMY_DATA : parse_tmy_data_label;
         default: parse_fwd_label;
     }
 }
@@ -399,7 +399,7 @@ parser parse_fwd_label {
 
 parser parse_tmy_inst_label {
     extract(tmy_inst_labels[next]);
-    transition select(latest.tos) {
+    return select(latest.tos) {
         0      : parse_tmy_inst_label;
         default: ingress;
     }
@@ -425,7 +425,7 @@ register ingressDropCounter {
     instance_count: MAX_PORT_NUM;
 }
 
-action pass {
+action pass() {
 }
 
 table drop {
@@ -504,7 +504,7 @@ table fwd_complete_udp {
 
 action ipv4_forward(port) {
     modify_field(standard_metadata.egress_spec, port);
-    subtract_from_field(hdr.ipv4.ttl, 1);
+    subtract_from_field(ipv4.ttl, 1);
 }
 
 table ipv4_lpm {
@@ -1027,3 +1027,4 @@ control egress {
             }
         }
     }
+}
