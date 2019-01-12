@@ -297,6 +297,7 @@ metadata queueing_metadata_t queueing_metadata;
 
 header_type metadata_t {
     fields {
+        drop;
         is_probe: 1;    
         is_switch: 1;   
         tmy_proto: 8;     
@@ -453,9 +454,14 @@ register ingressDropCounter {
 action pass() {
 }
 
-table drop {
+action mark_drop() {
+    modify_field(meta.drop, 1);
+    drop();
+}
+
+table mark_drop {
     actions {
-        drop;
+        mark_drop;
     }
 }
 
@@ -477,7 +483,7 @@ table ingress_traffic_count {
 
 action ingress_drop_count() {
     register_read(meta.ingress_drop_cnt_val, ingressDropCounter, standard_metadata.ingress_port);
-    add_to_field(meta.ingress_drop_cnt_val, standard_metadata.drop);
+    add_to_field(meta.ingress_drop_cnt_val, meta.drop);
     register_write(ingressDropCounter, standard_metadata.ingress_port, meta.ingress_drop_cnt_val);
 }
 
@@ -490,7 +496,6 @@ table ingress_drop_count {
 action fwd_nhop() {
     modify_field(standard_metadata.egress_spec, fwd_labels[0].outport);
     pop(fwd_labels, 1);
-    subtract_from_field(fwd_header.label_cnt, 1);
 }
 
 table fwd_nhop {
@@ -551,7 +556,7 @@ control ingress {
     if (meta.is_probe == 0) {
         if (ethernet.etherType == TYPE_IPv4) {
             if (ipv4.ttl == 0) {
-                apply(drop);
+                apply(mark_drop);
             }
             else {
                 apply(ipv4_lpm);
@@ -560,7 +565,7 @@ control ingress {
     }
     else {
         if (!valid(fwd_header)) {
-            apply(drop);
+            apply(mark_drop);
         }
         else {
             apply(fwd_nhop);
@@ -616,7 +621,7 @@ table egress_traffic_count {
 
 action egress_drop_count() {
     register_read(meta.egress_drop_cnt_val, egressDropCounter, standard_metadata.egress_port);
-    add_to_field(meta.egress_drop_cnt_val, standard_metadata.drop);
+    add_to_field(meta.egress_drop_cnt_val, meta.drop);
     register_write(egressDropCounter, standard_metadata.egress_port, meta.egress_drop_cnt_val);
 }
 
