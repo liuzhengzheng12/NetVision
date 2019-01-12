@@ -11,13 +11,13 @@ PORT_FWD = 0xffff
 PORT_TMY_DATA = 0xfffe
 
 
-class FWD_Header(Packet):
-    fields_desc = [BitField('proto', 0, 8)]
-
-
 class FWD_Label(Packet):
     fields_desc = [BitField('outport', 0, 8),
                    BitField('tos', 0, 8)]
+
+
+class TMY_Proto_Header(Packet):
+    fields_desc = [BitField('proto', 0, 8)]
 
 
 class TMY_INST_Label(Packet):
@@ -50,10 +50,10 @@ def sendProbes():
 
     port_list = [4, 2, 4, 1, 1]
     pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff') / IP() / UDP(dport=PORT_FWD)
-    pkt /= FWD_Header(proto=0xff)
     for port in port_list[:-1]:
         pkt /= FWD_Label(outport=port, tos=0)
     pkt /= FWD_Label(outport=port_list[-1], tos=1)
+    pkt /= TMY_Proto_Header(proto=0xff)
     pkt /= TMY_INST_Label(switch_id=1, bit_ingress_port=1, tos=1)
     # pkt /= TMY_INST_Label(switch_id=6, bit_ingress_port=1, tos=1)
     pkt.show()

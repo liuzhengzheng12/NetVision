@@ -73,13 +73,6 @@ header_type udp_t {
 }
 header udp_t udp;
 
-header_type fwd_header_t {
-    fields {
-        proto: 8;
-    }
-}
-header fwd_header_t fwd_header;
-
 header_type fwd_label_t {
     fields {
         outport: 8;
@@ -87,6 +80,13 @@ header_type fwd_label_t {
     }
 }
 header fwd_label_t fwd_labels[FWD_MAX_LABELS];
+
+header_type tmy_proto_t {
+    fields {
+        proto: 8;
+    }
+}
+header tmy_proto_t tmy_proto;
 
 header_type tmy_inst_label_t {
     fields {
@@ -409,19 +409,26 @@ parser parse_udp {
 parser parse_fwd_header {
     extract(fwd_header);
     set_metadata(meta.is_probe, 1);
-    set_metadata(meta.tmy_proto, fwd_header.proto);
     return parse_fwd_label;
 }
 
 parser parse_fwd_label {
     extract(fwd_labels[next]);
     return select(latest.tos) {
-        0 : parse_fwd_label;
-        1 : parse_tmy_inst_label;
+        0: parse_fwd_label;
+        1: parse_tmy_proto;
         default : ingress;
     }
 }
 
+parser parse_tmy_proto {
+    exact(tmy_proto);
+    return select(tmy_proto.proto) {
+        PROTO_TMY_INST: parse_tmy_inst_label;
+        PROTO_TMY_DATA: ingress;
+        default: ingress;
+    }
+}
 
 parser parse_tmy_inst_label {
     extract(tmy_inst_labels[next]);
@@ -991,7 +998,7 @@ table check_bit_inst_type {
 }
 
 action tmy_inst_complete() {
-    modify_field(fwd_header.proto, PROTO_TMY_DATA);
+    modify_field(tmy_proto.proto, PROTO_TMY_DATA);
 }
 
 table tmy_inst_complete {
