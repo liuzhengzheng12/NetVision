@@ -15,8 +15,8 @@
 
 #define MAX_PORT_NUM 256
 
-#define FWD_MAX_LABELS  100
-#define TMY_MAX_LABELS  100
+#define FWD_MAX_LABELS  10
+#define TMY_MAX_LABELS  10
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -76,20 +76,20 @@ header_type udp_t {
 }
 header udp_t udp;
 
-header_type fwd_header_t {
+header_type fwd_label_t {
+    fields {
+        outport: 8;
+        tos: 8;
+    }
+}
+header fwd_label_t fwd_labels[FWD_MAX_LABELS];
+
+header_type tmy_proto_t {
     fields {
         proto: 8;
     }
 }
-header fwd_header_t fwd_header;
-
-header_type fwd_label_t {
-    fields {
-        outport: 7;
-        tos: 1;
-    }
-}
-header fwd_label_t fwd_labels[FWD_MAX_LABELS];
+header tmy_proto_t tmy_proto;
 
 header_type tmy_inst_label_t {
     fields {
@@ -112,11 +112,18 @@ header_type tmy_inst_label_t {
         bit_deq_qdepth: 1;
         bit_pkt_len: 1;
         bit_inst_type: 1;
-        bit_reserved: 6;
-        tos: 1;
+        bit_reserved: 7;
+        tos: 8;
     }
 }
 header tmy_inst_label_t tmy_inst_labels[TMY_MAX_LABELS];
+
+header_type tmy_data_header_t {
+    fields {
+        label_cnt: 8;
+    }
+}
+header tmy_data_header_t tmy_data_header;
 
 header_type switch_id_t {
     fields {
@@ -274,30 +281,6 @@ header_type inst_type_t {
 }
 header inst_type_t inst_type;
 
-header_type intrinsic_metadata_t {
-    fields {
-        ingress_global_timestamp : 48;
-        egress_global_timestamp : 48;
-        lf_field_list : 8;
-        mcast_grp : 16;
-        egress_rid : 16;
-        resubmit_flag : 8;
-        recirculate_flag : 8;
-    }
-}
-metadata intrinsic_metadata_t intrinsic_metadata;
-
-header_type queueing_metadata_t {
-    fields {
-        enq_timestamp : 48;
-        enq_qdepth : 16;
-        deq_timedelta : 32;
-        deq_qdepth : 16;
-        qid : 8;
-    }
-}
-metadata queueing_metadata_t queueing_metadata;
-
 header_type metadata_t {
     fields {
         drop: 1;
@@ -326,7 +309,7 @@ header_type metadata_t {
         bit_pkt_len: 1;
         bit_inst_type: 1;
         bit_reserved: 7;
-        tos: 1;
+        tos: 8;
         tmy_data_label_cnt: 8;
         ingress_pkt_cnt_val: 32;
         ingress_byte_cnt_val: 32;
@@ -396,7 +379,7 @@ parser parse_ipv4 {
 parser parse_tcp {
     extract(tcp);
     return select(tcp.dstPort) {
-        PORT_FWD: parse_fwd_header;
+        PORT_FWD: parse_fwd_label;
         default : ingress;
     }
 }
@@ -404,33 +387,139 @@ parser parse_tcp {
 parser parse_udp {
     extract(udp);
     return select(udp.dstPort) {
-        PORT_FWD: parse_fwd_header;
+        PORT_FWD: parse_fwd_label;
         default : ingress;
     }
 }
 
-parser parse_fwd_header {
-    extract(fwd_header);
-    set_metadata(meta.is_probe, 1);
-    set_metadata(meta.tmy_proto, fwd_header.proto);
-    return parse_fwd_label;
-}
-
 parser parse_fwd_label {
     extract(fwd_labels[next]);
-    return select(latest.tos, meta.tmy_proto) {
-        1, PROTO_TMY_INST : parse_tmy_inst_label;
-        default: parse_fwd_label;
+    return select(latest.tos) {
+        0: parse_fwd_label;
+        1: parse_tmy_proto;
+        default : ingress;
     }
 }
 
+parser parse_tmy_proto {
+    extract(tmy_proto);
+    set_metadata(meta.is_probe, 1);
+    return select(tmy_proto.proto) {
+        PROTO_TMY_INST: parse_tmy_inst_label;
+        PROTO_TMY_DATA: ingress;
+        default: ingress;
+    }
+}
 
 parser parse_tmy_inst_label {
     extract(tmy_inst_labels[next]);
     return select(latest.tos) {
-        0      : parse_tmy_inst_label;
+        0 : parse_tmy_inst_label;
+        1 : parse_tmy_data_header;
+    }
+}
+
+parser parse_tmy_data_header {
+    extract(tmy_data_header);
+    return select(tmy_data_header.label_cnt) {
+        -1 : parse_switch_id;
         default: ingress;
     }
+}
+
+parser parse_switch_id {
+    extract(switch_id);
+    return parse_bitmap;
+}
+
+parser parse_bitmap {
+    extract(bitmap);
+    return parse_state;
+}
+
+parser parse_state {
+    extract(state);
+    return parse_ingress_port;
+}
+
+parser parse_ingress_port {
+    extract(ingress_port);
+    return parse_ingress_tstamp;
+}
+
+parser parse_ingress_tstamp {
+    extract(ingress_tstamp);
+    return parse_ingress_pkt_cnt;
+}
+
+parser parse_ingress_pkt_cnt {
+    extract(ingress_pkt_cnt);
+    return parse_ingress_byte_cnt;
+}
+
+parser parse_ingress_byte_cnt {
+    extract(ingress_byte_cnt);
+    return parse_ingress_drop_cnt;
+}
+
+parser parse_ingress_drop_cnt {
+    extract(ingress_drop_cnt);
+    return parse_egress_port;
+}
+
+parser parse_egress_port {
+    extract(egress_port);
+    return parse_egress_tstamp;
+}
+
+parser parse_egress_tstamp {
+    extract(egress_tstamp);
+    return parse_egress_pkt_cnt;
+}
+
+parser parse_egress_pkt_cnt {
+    extract(egress_pkt_cnt);
+    return parse_egress_byte_cnt;
+}
+
+parser parse_egress_byte_cnt {
+    extract(egress_byte_cnt);
+    return parse_egress_drop_cnt;
+}
+
+parser parse_egress_drop_cnt {
+    extract(egress_drop_cnt);
+    return parse_enq_tstamp;
+}
+
+parser parse_enq_tstamp {
+    extract(enq_tstamp);
+    return parse_enq_qdepth;
+}
+
+parser parse_enq_qdepth {
+    extract(enq_qdepth);
+    return parse_deq_timedelta;
+}
+
+parser parse_deq_timedelta {
+    extract(deq_timedelta);
+    return parse_deq_qdepth;
+}
+
+parser parse_deq_qdepth {
+    extract(deq_qdepth);
+    return parse_pkt_len;
+}
+
+parser parse_pkt_len {
+    extract(pkt_len);
+    return parse_inst_type;
+}
+
+parser parse_inst_type {
+    extract(inst_type);
+    return ingress;
 }
 
 
@@ -447,7 +536,7 @@ blackbox stateful_alu read_and_write_ingress_pkt_cnt {
     reg : reg_ingress_pkt_cnt;
     update_lo_1_value : register_lo + 1;
     output_value : alu_lo;
-    output_dst : meta.ingress_pkt_cnt;
+    output_dst : meta.ingress_pkt_cnt_val;
 }
 
 action read_and_write_ingress_pkt_cnt() {
@@ -468,9 +557,9 @@ register reg_ingress_byte_cnt {
 
 blackbox stateful_alu read_and_write_ingress_byte_cnt {
     reg : reg_ingress_byte_cnt;
-    update_lo_1_value : register_lo + 1;
+    update_lo_1_value : register_lo + eg_intr_md.pkt_length;
     output_value : alu_lo;
-    output_dst : meta.ingress_pkt_cnt;
+    output_dst : meta.ingress_byte_cnt_val;
 }
 
 action read_and_write_ingress_byte_cnt() {
@@ -484,12 +573,27 @@ table read_and_write_ingress_byte_cnt {
     default_action: read_and_write_ingress_byte_cnt;
 }
 
-register ingressDropCounter {
+register reg_ingress_drop_cnt {
     width: 32;
     instance_count: MAX_PORT_NUM;
 }
 
-action pass() {
+blackbox stateful_alu read_and_write_ingress_drop_cnt {
+    reg : reg_ingress_drop_cnt;
+    update_lo_1_value : register_lo + meta.drop;
+    output_value : alu_lo;
+    output_dst : meta.ingress_drop_cnt_val;
+}
+
+action read_and_write_ingress_drop_cnt() {
+    read_and_write_ingress_drop_cnt.execute_stateful_alu(ig_intr_md.ingress_port);
+}
+
+table read_and_write_ingress_drop_cnt {
+    actions {
+        read_and_write_ingress_drop_cnt;
+    }
+    default_action: read_and_write_ingress_drop_cnt;
 }
 
 action mark_drop() {
@@ -501,39 +605,11 @@ table mark_drop {
     actions {
         mark_drop;
     }
-}
-
-
-action ingress_traffic_count() {
-    register_read(meta.ingress_pkt_cnt_val, ingressPktCounter, standard_metadata.ingress_port);
-    add_to_field(meta.ingress_pkt_cnt_val, 1);
-    register_write(ingressPktCounter, standard_metadata.ingress_port, meta.ingress_pkt_cnt_val);
-
-    register_read(meta.ingress_byte_cnt_val, ingressByteCounter, standard_metadata.ingress_port);
-    add_to_field(meta.ingress_byte_cnt_val, standard_metadata.packet_length);
-    register_write(ingressByteCounter, standard_metadata.ingress_port, meta.ingress_byte_cnt_val);
-}
-
-table ingress_traffic_count {
-    actions {
-        ingress_traffic_count;
-    }
-}
-
-action ingress_drop_count() {
-    register_read(meta.ingress_drop_cnt_val, ingressDropCounter, standard_metadata.ingress_port);
-    add_to_field(meta.ingress_drop_cnt_val, meta.drop);
-    register_write(ingressDropCounter, standard_metadata.ingress_port, meta.ingress_drop_cnt_val);
-}
-
-table ingress_drop_count {
-    actions {
-        ingress_drop_count;
-    }
+    default_action: mark_drop;
 }
 
 action fwd_nhop() {
-    modify_field(standard_metadata.egress_spec, fwd_labels[0].outport);
+    modify_field(ig_intr_md_for_tm.ucast_egress_port, fwd_labels[0].outport);
     pop(fwd_labels, 1);
 }
 
@@ -541,16 +617,20 @@ table fwd_nhop {
     actions {
         fwd_nhop;
     }
-}
-action fwd_header_invalid() {
-    remove_header(fwd_header);
+    default_action: fwd_nhop;
 }
 
-table fwd_header_invalid {
-    actions {
-        fwd_header_invalid;
-    }
+action tmy_proto_header_invalid() {
+    remove_header(tmy_proto);
 }
+
+table tmy_proto_header_invalid {
+    actions {
+        tmy_proto_header_invalid;
+    }
+    default_action: tmy_proto_header_invalid;
+}
+
 action fwd_complete_tcp() {
     modify_field(tcp.dstPort, PORT_TMY_DATA);
 }
@@ -559,6 +639,7 @@ table fwd_complete_tcp {
     actions {
         fwd_complete_tcp;
     }
+    default_action: fwd_complete_tcp;
 }
 
 action fwd_complete_udp() {
@@ -569,6 +650,7 @@ table fwd_complete_udp {
     actions {
         fwd_complete_udp;
     }
+    default_action: fwd_complete_udp;
 }
 
 action ipv4_forward(port) {
@@ -583,13 +665,15 @@ table ipv4_lpm {
     actions {
         ipv4_forward;
         mark_drop;
-        pass;
+        no_op;
     }
     size: 1024;
+    default_action: no_op;
 }
 
 control ingress {
-    apply(ingress_traffic_count);
+    apply(read_and_write_ingress_pkt_cnt);
+    apply(read_and_write_ingress_byte_cnt);
 
     if (meta.is_probe == 0) {
         if (ethernet.etherType == TYPE_IPv4) {
@@ -602,12 +686,9 @@ control ingress {
         }
     }
     else {
-        if (valid(fwd_header)) {
-            apply(fwd_nhop);
-            if (valid(fwd_header)) {
-            }
-            else {
-                apply(fwd_header_invalid);
+        if (valid(fwd_labels[0])) {
+            if (fwd_labels[0].tos == 1) {
+                apply(tmy_proto_header_invalid);
                 if (valid(tcp)) {
                     apply(fwd_complete_tcp);
                 }
@@ -615,61 +696,88 @@ control ingress {
                     apply(fwd_complete_udp);
                 }
             }
+            apply(fwd_nhop);
         }
         else {
             apply(mark_drop);
         }
     }
 
-    apply(ingress_drop_count);
+    apply(read_and_write_ingress_drop_cnt);
 }
 
 /*************************************************************************
 ****************  E G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
-
-register egressPktCounter {
+register reg_egress_pkt_cnt {
     width: 32;
     instance_count: MAX_PORT_NUM;
 }
 
-register egressByteCounter {
-    width: 32;
-    instance_count: MAX_PORT_NUM;
+blackbox stateful_alu read_and_write_egress_pkt_cnt {
+    reg : reg_egress_pkt_cnt;
+    update_lo_1_value : register_lo + 1;
+    output_value : alu_lo;
+    output_dst : meta.egress_pkt_cnt_val;
 }
 
-register egressDropCounter {
-    width: 32;
-    instance_count: MAX_PORT_NUM;
+action read_and_write_egress_pkt_cnt() {
+    read_and_write_egress_pkt_cnt.execute_stateful_alu(eg_intr_md.egress_port);
 }
 
-action egress_traffic_count() {
-    register_read(meta.egress_pkt_cnt_val, egressPktCounter, standard_metadata.egress_port);
-    add_to_field(meta.egress_pkt_cnt_val, 1);
-    register_write(egressPktCounter, standard_metadata.egress_port, meta.egress_pkt_cnt_val);
-
-    register_read(meta.egress_byte_cnt_val, egressByteCounter, standard_metadata.egress_port);
-    add_to_field(meta.egress_byte_cnt_val, standard_metadata.packet_length);
-    register_write(egressByteCounter, standard_metadata.egress_port, meta.egress_byte_cnt_val);
-}
-
-table egress_traffic_count {
+table read_and_write_egress_pkt_cnt {
     actions {
-        egress_traffic_count;
+        read_and_write_egress_pkt_cnt;
     }
+    default_action: read_and_write_egress_pkt_cnt;
 }
 
-action egress_drop_count() {
-    register_read(meta.egress_drop_cnt_val, egressDropCounter, standard_metadata.egress_port);
-    add_to_field(meta.egress_drop_cnt_val, meta.drop);
-    register_write(egressDropCounter, standard_metadata.egress_port, meta.egress_drop_cnt_val);
+register reg_egress_byte_cnt {
+    width: 32;
+    instance_count: MAX_PORT_NUM;
 }
 
-table egress_drop_count {
+blackbox stateful_alu read_and_write_egress_byte_cnt {
+    reg : reg_egress_byte_cnt;
+    update_lo_1_value : register_lo + eg_intr_md.pkt_length;
+    output_value : alu_lo;
+    output_dst : meta.egress_byte_cnt_val;
+}
+
+action read_and_write_egress_byte_cnt() {
+    read_and_write_egress_byte_cnt.execute_stateful_alu(eg_intr_md.egress_port);
+}
+
+table read_and_write_egress_byte_cnt {
     actions {
-        egress_drop_count;
+        read_and_write_egress_byte_cnt;
     }
+    default_action: read_and_write_egress_byte_cnt;
 }
+
+register reg_egress_drop_cnt {
+    width: 32;
+    instance_count: MAX_PORT_NUM;
+}
+
+blackbox stateful_alu read_and_write_egress_drop_cnt {
+    reg : reg_egress_drop_cnt;
+    update_lo_1_value : register_lo + meta.drop;
+    output_value : alu_lo;
+    output_dst : meta.egress_drop_cnt_val;
+}
+
+action read_and_write_egress_drop_cnt() {
+    read_and_write_egress_drop_cnt.execute_stateful_alu(eg_intr_md.egress_port);
+}
+
+table read_and_write_egress_drop_cnt {
+    actions {
+        read_and_write_egress_drop_cnt;
+    }
+    default_action: read_and_write_egress_drop_cnt;
+}
+
 
 action pop_tmy_inst_label() {
     modify_field(meta.switch_id, tmy_inst_labels[0].switch_id);
@@ -697,6 +805,7 @@ action pop_tmy_inst_label() {
 action is_switch() {
     modify_field(meta.is_switch, 1);
     pop_tmy_inst_label();
+    add_to_field(tmy_data_header.label_cnt, 1);
 }
 
 action is_not_switch() {
@@ -711,7 +820,7 @@ table check_switch_id {
         is_switch;
         is_not_switch;
     }
-    size: 1;
+    default_action: is_not_switch;
 }
 
 action add_switch_id_header() {
@@ -723,6 +832,7 @@ table add_switch_id_header {
     actions {
         add_switch_id_header;
     }
+    default_action: add_switch_id_header;
 }
 
 action add_bitmap_header() {
@@ -751,6 +861,7 @@ table add_bitmap_header {
     actions {
         add_bitmap_header;
     }
+    default_action: add_bitmap_header;
 }
 
 action add_state_header(state_val) {
@@ -764,14 +875,15 @@ table check_bit_state {
     }
     actions {
         add_state_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_ingress_port_header() {
     add_header(ingress_port);
-    modify_field(ingress_port.ingress_port, standard_metadata.ingress_port);
+    modify_field(ingress_port.ingress_port, ig_intr_md.ingress_port);
 }
 
 table check_bit_ingress_port {
@@ -780,14 +892,15 @@ table check_bit_ingress_port {
     }
     actions {
         add_ingress_port_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_ingress_tstamp_header() {
     add_header(ingress_tstamp);
-    modify_field(ingress_tstamp.ingress_tstamp, intrinsic_metadata.ingress_global_timestamp);
+    modify_field(ingress_tstamp.ingress_tstamp, ig_intr_md_from_parser_aux.ingress_global_tstamp);
 }
 
 table check_bit_ingress_tstamp {
@@ -796,9 +909,10 @@ table check_bit_ingress_tstamp {
     }
     actions {
         add_ingress_tstamp_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_ingress_pkt_cnt_header() {
@@ -812,9 +926,10 @@ table check_bit_ingress_pkt_cnt {
     }
     actions {
         add_ingress_pkt_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_ingress_byte_cnt_header() {
@@ -828,9 +943,10 @@ table check_bit_ingress_byte_cnt {
     }
     actions {
         add_ingress_byte_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_ingress_drop_cnt_header() {
@@ -844,14 +960,15 @@ table check_bit_ingress_drop_cnt {
     }
     actions {
         add_ingress_drop_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_egress_port_header() {
     add_header(egress_port);
-    modify_field(egress_port.egress_port, standard_metadata.egress_port);
+    modify_field(egress_port.egress_port, eg_intr_md.egress_port);
 }
 
 table check_bit_egress_port {
@@ -860,14 +977,15 @@ table check_bit_egress_port {
     }
     actions {
         add_egress_port_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_egress_tstamp_header() {
     add_header(egress_tstamp);
-    modify_field(egress_tstamp.egress_tstamp, intrinsic_metadata.egress_global_timestamp);
+    modify_field(egress_tstamp.egress_tstamp, eg_intr_md_from_parser_aux.egress_global_tstamp);
 }
 
 table check_bit_egress_tstamp {
@@ -876,9 +994,10 @@ table check_bit_egress_tstamp {
     }
     actions {
         add_egress_tstamp_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_egress_pkt_cnt_header() {
@@ -892,9 +1011,10 @@ table check_bit_egress_pkt_cnt {
     }
     actions {
         add_egress_pkt_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_egress_byte_cnt_header() {
@@ -908,9 +1028,10 @@ table check_bit_egress_byte_cnt {
     }
     actions {
         add_egress_byte_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_egress_drop_cnt_header() {
@@ -924,14 +1045,15 @@ table check_bit_egress_drop_cnt {
     }
     actions {
         add_egress_drop_cnt_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_enq_tstamp_header() {
     add_header(enq_tstamp);
-    modify_field(enq_tstamp.enq_tstamp, queueing_metadata.enq_timestamp);
+    modify_field(enq_tstamp.enq_tstamp, eg_intr_md.enq_tstamp);
 }
 
 table check_bit_enq_tstamp {
@@ -940,14 +1062,15 @@ table check_bit_enq_tstamp {
     }
     actions {
         add_enq_tstamp_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_enq_qdepth_header() {
     add_header(enq_qdepth);
-    modify_field(enq_qdepth.enq_qdepth, queueing_metadata.enq_qdepth);
+    modify_field(enq_qdepth.enq_qdepth, eg_intr_md.enq_qdepth);
 }
 
 table check_bit_enq_qdepth {
@@ -956,14 +1079,15 @@ table check_bit_enq_qdepth {
     }
     actions {
         add_enq_qdepth_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_deq_timedelta_header() {
     add_header(deq_timedelta);
-    modify_field(deq_timedelta.deq_timedelta, queueing_metadata.deq_timedelta);
+    modify_field(deq_timedelta.deq_timedelta, eg_intr_md.deq_timedelta);
 }
 
 table check_bit_deq_timedelta {
@@ -972,14 +1096,15 @@ table check_bit_deq_timedelta {
     }
     actions {
         add_deq_timedelta_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_deq_qdepth_header() {
     add_header(deq_qdepth);
-    modify_field(deq_qdepth.deq_qdepth, queueing_metadata.deq_qdepth);
+    modify_field(deq_qdepth.deq_qdepth, eg_intr_md.deq_qdepth);
 }
 
 table check_bit_deq_qdepth {
@@ -988,14 +1113,15 @@ table check_bit_deq_qdepth {
     }
     actions {
         add_deq_qdepth_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_pkt_len_header() {
     add_header(pkt_len);
-    modify_field(pkt_len.pkt_len, standard_metadata.packet_length);
+    modify_field(pkt_len.pkt_len, eg_intr_md.pkt_length);
 }
 
 table check_bit_pkt_len {
@@ -1004,14 +1130,15 @@ table check_bit_pkt_len {
     }
     actions {
         add_pkt_len_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action add_inst_type_header() {
     add_header(inst_type);
-    modify_field(inst_type.inst_type, standard_metadata.instance_type);
+    modify_field(inst_type.inst_type, ig_pg_md.instance_id);
 }
 
 table check_bit_inst_type {
@@ -1020,25 +1147,27 @@ table check_bit_inst_type {
     }
     actions {
         add_inst_type_header;
-        pass;
+        no_op;
     }
     size: 1;
+    default_action: no_op;
 }
 
 action tmy_inst_complete() {
-    modify_field(fwd_header.proto, PROTO_TMY_DATA);
+    modify_field(tmy_proto.proto, PROTO_TMY_DATA);
 }
 
 table tmy_inst_complete {
     actions {
         tmy_inst_complete;
     }
+    default_action: tmy_inst_complete;
 }
 
 control egress {
+    
     apply(egress_traffic_count);
     apply(egress_drop_count);
-
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
