@@ -340,13 +340,12 @@ field_list_calculation ipv4_checksum_calc {
     input {
         ipv4_checksum_fields;
     }
-    algorithm: crc16;
+    algorithm: csum16;
     output_width: 16;
 }
 
 calculated_field ipv4.hdrChecksum {
-    verify ipv4_checksum_calc if (valid(ipv4));
-    update ipv4_checksum_calc if (valid(ipv4));
+    update ipv4_checksum_calc;
 }
 
 /*************************************************************************
@@ -422,7 +421,7 @@ parser parse_tmy_inst_label {
 parser parse_tmy_data_header {
     extract(tmy_data_header);
     return select(tmy_data_header.label_cnt) {
-        -1 : parse_switch_id;
+        0xff : parse_switch_id;
         default: ingress;
     }
 }
@@ -601,6 +600,9 @@ action mark_drop() {
     drop();
 }
 
+action pass() {
+}
+
 table mark_drop {
     actions {
         mark_drop;
@@ -665,10 +667,9 @@ table ipv4_lpm {
     actions {
         ipv4_forward;
         mark_drop;
-        no_op;
+        pass;
     }
-    size: 1024;
-    default_action: no_op;
+    default_action: pass;
 }
 
 control ingress {
@@ -875,10 +876,10 @@ table check_bit_state {
     }
     actions {
         add_state_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_ingress_port_header() {
@@ -892,10 +893,10 @@ table check_bit_ingress_port {
     }
     actions {
         add_ingress_port_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_ingress_tstamp_header() {
@@ -909,10 +910,10 @@ table check_bit_ingress_tstamp {
     }
     actions {
         add_ingress_tstamp_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_ingress_pkt_cnt_header() {
@@ -926,10 +927,10 @@ table check_bit_ingress_pkt_cnt {
     }
     actions {
         add_ingress_pkt_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_ingress_byte_cnt_header() {
@@ -943,10 +944,10 @@ table check_bit_ingress_byte_cnt {
     }
     actions {
         add_ingress_byte_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_ingress_drop_cnt_header() {
@@ -960,10 +961,10 @@ table check_bit_ingress_drop_cnt {
     }
     actions {
         add_ingress_drop_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_egress_port_header() {
@@ -977,10 +978,10 @@ table check_bit_egress_port {
     }
     actions {
         add_egress_port_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_egress_tstamp_header() {
@@ -994,10 +995,10 @@ table check_bit_egress_tstamp {
     }
     actions {
         add_egress_tstamp_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_egress_pkt_cnt_header() {
@@ -1011,10 +1012,10 @@ table check_bit_egress_pkt_cnt {
     }
     actions {
         add_egress_pkt_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_egress_byte_cnt_header() {
@@ -1028,10 +1029,10 @@ table check_bit_egress_byte_cnt {
     }
     actions {
         add_egress_byte_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_egress_drop_cnt_header() {
@@ -1045,10 +1046,10 @@ table check_bit_egress_drop_cnt {
     }
     actions {
         add_egress_drop_cnt_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_enq_tstamp_header() {
@@ -1062,10 +1063,10 @@ table check_bit_enq_tstamp {
     }
     actions {
         add_enq_tstamp_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_enq_qdepth_header() {
@@ -1079,10 +1080,10 @@ table check_bit_enq_qdepth {
     }
     actions {
         add_enq_qdepth_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_deq_timedelta_header() {
@@ -1096,10 +1097,10 @@ table check_bit_deq_timedelta {
     }
     actions {
         add_deq_timedelta_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_deq_qdepth_header() {
@@ -1113,10 +1114,10 @@ table check_bit_deq_qdepth {
     }
     actions {
         add_deq_qdepth_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_pkt_len_header() {
@@ -1130,15 +1131,15 @@ table check_bit_pkt_len {
     }
     actions {
         add_pkt_len_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action add_inst_type_header() {
     add_header(inst_type);
-    modify_field(inst_type.inst_type, ig_pg_md.instance_id);
+    modify_field(inst_type.inst_type, 0);
 }
 
 table check_bit_inst_type {
@@ -1147,10 +1148,10 @@ table check_bit_inst_type {
     }
     actions {
         add_inst_type_header;
-        no_op;
+        pass;
     }
+    default_action: pass;
     size: 1;
-    default_action: no_op;
 }
 
 action tmy_inst_complete() {
@@ -1164,10 +1165,18 @@ table tmy_inst_complete {
     default_action: tmy_inst_complete;
 }
 
+table pass {
+    actions {
+        pass;
+    }
+    default_action: pass;
+}
+
 control egress {
-    
-    apply(egress_traffic_count);
-    apply(egress_drop_count);
+    apply(read_and_write_egress_pkt_cnt);
+    apply(read_and_write_egress_byte_cnt);
+    apply(read_and_write_egress_drop_cnt);
+
     if (valid(tmy_inst_labels[0])) {
         apply(check_switch_id);
         if (meta.is_switch == 1) {
@@ -1191,6 +1200,7 @@ control egress {
             apply(check_bit_pkt_len);
             apply(check_bit_inst_type);
             if (valid(tmy_inst_labels[0])) {
+                apply(pass);
             } 
             else {
                 apply(tmy_inst_complete);
